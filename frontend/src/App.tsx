@@ -20,6 +20,11 @@ import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import EditCoursePage from './pages/Admin/EditCoursePage';
+import CoursesPage from "./pages/CoursesPage";
+import CourseDetailPage from './pages/CourseDetailPage';
+import AdminCoursesPage from "./pages/Admin/AdminCoursesPage";
+import CreateCoursePage  from './pages/Admin/CreateCoursePage';
 
 // ── Protects routes from unauthenticated users ────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -74,11 +79,17 @@ const AppRoutes = () => {
         </AdminRoute>
       }>
         <Route index element={<AdminDashboard />} />
+       <Route path="courses" element={<AdminCoursesPage />} />
       </Route>
+      <Route path="/admin/courses/create" element={<CreateCoursePage />} />
+      <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
 
       {/* Protected dashboard routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index path="/" element={<Home />} />
+
+        <Route path="/courses" element={<CoursesPage />} />
+        <Route path="/courses/:id" element={<CourseDetailPage />} />
         <Route path="/profile"       element={<UserProfiles />} />
         <Route path="/calendar"      element={<Calendar />} />
         <Route path="/blank"         element={<Blank />} />
