@@ -4,59 +4,53 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import {
   fetchCourseById, fetchCategories, updateCourse, createCategory,
-  getThumbnailUrl, Category,
+  fetchProfessors, getThumbnailUrl, Category, Professor,
 } from '../../api/courseApi';
 
 export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Page-level loading state (fetching existing course)
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError]     = useState('');
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories]   = useState<Category[]>([]);
+  const [professors, setProfessors]   = useState<Professor[]>([]);   
 
-  // Form fields — pre-filled from DB
   const [title, setTitle]             = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId]   = useState<number | ''>('');
+  const [professorId, setProfessorId] = useState<number | ''>('');   
 
-  // Thumbnail state
-  // existingThumbUrl  = the URL of the image already saved in DB (shown on load)
-  // newThumbnail      = a new File the admin picks to replace the existing one
-  // thumbPreview      = base64 preview of the newly picked file
   const [existingThumbUrl, setExistingThumbUrl] = useState<string | null>(null);
   const [newThumbnail, setNewThumbnail]         = useState<File | null>(null);
   const [thumbPreview, setThumbPreview]         = useState<string | null>(null);
 
-  // Submit state
-  const [formError, setFormError]   = useState('');
+  const [formError, setFormError]     = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Category modal
   const [showCatModal, setShowCatModal] = useState(false);
   const [newCatName, setNewCatName]     = useState('');
   const [newCatDesc, setNewCatDesc]     = useState('');
   const [catLoading, setCatLoading]     = useState(false);
   const [catError, setCatError]         = useState('');
 
-  // ── Load existing course data on mount ────────────────────
   useEffect(() => {
     if (!id) return;
-    Promise.all([fetchCourseById(Number(id)), fetchCategories()])
-      .then(([course, cats]) => {
+    Promise.all([fetchCourseById(Number(id)), fetchCategories(), fetchProfessors()])
+      .then(([course, cats, profs]) => {
         setTitle(course.title);
         setDescription(course.description || '');
-        setCategoryId(course.category_id || '');
+        setCategoryId(course.category_id   || '');
+        setProfessorId(course.professor_id || '');   
         setExistingThumbUrl(getThumbnailUrl(course.thumbnail?.file_path));
         setCategories(cats);
+        setProfessors(profs);
       })
       .catch(() => setPageError('Failed to load course. It may have been deleted.'))
       .finally(() => setPageLoading(false));
   }, [id]);
 
-  // ── Dropzone for new thumbnail ────────────────────────────
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0] || null;
     setNewThumbnail(file);
@@ -76,7 +70,6 @@ export default function EditCoursePage() {
     multiple: false,
   });
 
-  // ── Submit (save changes) ─────────────────────────────────
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setFormError('');
@@ -84,10 +77,10 @@ export default function EditCoursePage() {
     setFormLoading(true);
     try {
       await updateCourse(Number(id), {
-        title,
-        description,
-        category_id: categoryId || undefined,
-        thumbnail:   newThumbnail || undefined, // only sent if admin picked a new image
+        title, description,
+        category_id:  categoryId  || undefined,
+        professor_id: professorId || undefined,   
+        thumbnail:    newThumbnail || undefined,
       });
       navigate('/admin/courses');
     } catch (err: any) {
@@ -95,7 +88,6 @@ export default function EditCoursePage() {
     } finally { setFormLoading(false); }
   };
 
-  // ── Create category inline ────────────────────────────────
   const handleCreateCategory = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setCatError('');
@@ -112,13 +104,10 @@ export default function EditCoursePage() {
     } finally { setCatLoading(false); }
   };
 
-  // ── What thumbnail area shows ─────────────────────────────
-  // Priority: new preview > existing saved image > dropzone
   const showNewPreview      = !!thumbPreview;
   const showExistingPreview = !thumbPreview && !!existingThumbUrl;
   const showDropzone        = !thumbPreview && !existingThumbUrl;
 
-  // ── Render ────────────────────────────────────────────────
   if (pageLoading) {
     return (
       <div className="flex items-center justify-center py-32 text-gray-400">
@@ -134,12 +123,8 @@ export default function EditCoursePage() {
   if (pageError) {
     return (
       <div className="mx-auto max-w-screen-md p-6">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-red-600">
-          ⚠️ {pageError}
-        </div>
-        <button onClick={() => navigate('/admin/courses')} className="mt-4 text-sm text-blue-600 hover:underline">
-          ← Back to courses
-        </button>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-red-600">⚠️ {pageError}</div>
+        <button onClick={() => navigate('/admin/courses')} className="mt-4 text-sm text-blue-600 hover:underline">← Back to courses</button>
       </div>
     );
   }
@@ -147,13 +132,9 @@ export default function EditCoursePage() {
   return (
     <div className="mx-auto max-w-screen-md p-4 md:p-6">
 
-      {/* Page header */}
       <div className="mb-8 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => navigate('/admin/courses')}
-          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 dark:hover:bg-meta-4 transition"
-        >
+        <button type="button" onClick={() => navigate('/admin/courses')}
+          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 dark:hover:bg-meta-4 transition">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
@@ -164,7 +145,6 @@ export default function EditCoursePage() {
         </div>
       </div>
 
-      {/* Form card */}
       <div className="rounded-2xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
@@ -173,53 +153,47 @@ export default function EditCoursePage() {
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
               Course Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Introduction to React"
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition"
-            />
+              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition" />
           </div>
 
           {/* Description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Description</label>
+            <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide a brief overview of what students will learn..."
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition resize-none"
-            />
+              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition resize-none" />
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Category
-            </label>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Category</label>
             <div className="flex gap-3">
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-                className="flex-1 rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition"
-              >
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
+                className="flex-1 rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
                 <option value="">— Select a category —</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
+                {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
-              <button
-                type="button"
-                onClick={() => setShowCatModal(true)}
-                className="shrink-0 rounded-lg border border-blue-600 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition"
-              >
+              <button type="button" onClick={() => setShowCatModal(true)}
+                className="shrink-0 rounded-lg border border-blue-600 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition">
                 + New Category
               </button>
             </div>
+          </div>
+
+          {/* ── Professor dropdown ── */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+              Assign Professor
+            </label>
+            <select value={professorId} onChange={(e) => setProfessorId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
+              <option value="">— Select a professor —</option>
+              {professors.map((p) => (
+                <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.email})</option>
+              ))}
+            </select>
           </div>
 
           {/* Thumbnail */}
@@ -229,16 +203,11 @@ export default function EditCoursePage() {
               <span className="text-gray-400 text-xs font-normal">(JPEG, PNG, WEBP — max 5MB)</span>
             </label>
 
-            {/* NEW image preview (just picked from disk) */}
             {showNewPreview && (
               <div className="relative w-full h-56 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
                 <img src={thumbPreview!} alt="new preview" className="w-full h-full object-cover" />
-                {/* Remove new image → fall back to existing or dropzone */}
-                <button
-                  type="button"
-                  onClick={() => { setNewThumbnail(null); setThumbPreview(null); }}
-                  className="absolute top-3 right-3 rounded-full bg-black/60 text-white w-8 h-8 flex items-center justify-center hover:bg-black/80 transition text-base"
-                >
+                <button type="button" onClick={() => { setNewThumbnail(null); setThumbPreview(null); }}
+                  className="absolute top-3 right-3 rounded-full bg-black/60 text-white w-8 h-8 flex items-center justify-center hover:bg-black/80 transition text-base">
                   &times;
                 </button>
                 <div className="absolute bottom-3 left-3 rounded-lg bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
@@ -247,35 +216,20 @@ export default function EditCoursePage() {
               </div>
             )}
 
-            {/* EXISTING saved thumbnail */}
             {showExistingPreview && (
               <div className="relative w-full h-56 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
                 <img src={existingThumbUrl!} alt="current thumbnail" className="w-full h-full object-cover" />
-                {/* Click to replace */}
-                <div
-                  {...getRootProps()}
-                  className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 transition cursor-pointer group"
-                >
+                <div {...getRootProps()} className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 transition cursor-pointer group">
                   <input {...getInputProps()} />
-                  <span className="opacity-0 group-hover:opacity-100 transition rounded-lg bg-white/90 px-4 py-2 text-sm font-medium text-gray-800">
-                    Click to replace image
-                  </span>
+                  <span className="opacity-0 group-hover:opacity-100 transition rounded-lg bg-white/90 px-4 py-2 text-sm font-medium text-gray-800">Click to replace image</span>
                 </div>
-                <div className="absolute bottom-3 left-3 rounded-lg bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
-                  Current thumbnail — hover to replace
-                </div>
+                <div className="absolute bottom-3 left-3 rounded-lg bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">Current thumbnail — hover to replace</div>
               </div>
             )}
 
-            {/* DROPZONE (no image at all) */}
             {showDropzone && (
               <div className="transition border border-gray-300 border-dashed cursor-pointer dark:hover:border-brand-500 dark:border-gray-700 rounded-xl hover:border-brand-500">
-                <div
-                  {...getRootProps()}
-                  className={`rounded-xl p-10 ${
-                    isDragActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'
-                  }`}
-                >
+                <div {...getRootProps()} className={`rounded-xl p-10 ${isDragActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'}`}>
                   <input {...getInputProps()} />
                   <div className="flex flex-col items-center">
                     <div className="mb-5 flex justify-center">
@@ -288,9 +242,7 @@ export default function EditCoursePage() {
                     <h4 className="mb-2 font-semibold text-gray-800 text-lg dark:text-white/90">
                       {isDragActive ? 'Drop image here' : 'Drag & Drop image here'}
                     </h4>
-                    <span className="text-center mb-5 block text-sm text-gray-500 dark:text-gray-400">
-                      PNG, JPG or WebP — max 5MB
-                    </span>
+                    <span className="text-center mb-5 block text-sm text-gray-500 dark:text-gray-400">PNG, JPG or WebP — max 5MB</span>
                     <span className="font-medium underline text-sm text-brand-500">Browse File</span>
                   </div>
                 </div>
@@ -298,28 +250,17 @@ export default function EditCoursePage() {
             )}
           </div>
 
-          {/* Error */}
           {formError && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-              {formError}
-            </p>
+            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{formError}</p>
           )}
 
-          {/* Buttons */}
           <div className="flex gap-4 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/courses')}
-              className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition"
-            >
+            <button type="button" onClick={() => navigate('/admin/courses')}
+              className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition">
               Cancel
             </button>
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={formLoading}
-              className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60"
-            >
+            <button type="submit" onClick={handleSubmit} disabled={formLoading}
+              className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60">
               {formLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
@@ -327,7 +268,7 @@ export default function EditCoursePage() {
         </form>
       </div>
 
-      {/* ── Create Category Modal ── */}
+      {/* Create Category Modal — */}
       {showCatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-boxdark shadow-2xl flex flex-col max-h-[90vh]">

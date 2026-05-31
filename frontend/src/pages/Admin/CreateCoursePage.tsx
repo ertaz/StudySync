@@ -3,25 +3,25 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import {
-  fetchCategories, createCourse, createCategory,
-  Category,
+  fetchCategories, createCourse, createCategory, fetchProfessors,
+  Category, Professor,
 } from '../../api/courseApi';
 
 export default function CreateCoursePage() {
   const navigate = useNavigate();
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories]   = useState<Category[]>([]);
+  const [professors, setProfessors]   = useState<Professor[]>([]);   // ← NEW
 
-  // Course form
   const [title, setTitle]             = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId]   = useState<number | ''>('');
+  const [professorId, setProfessorId] = useState<number | ''>('');   // ← NEW
   const [thumbnail, setThumbnail]     = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
   const [formError, setFormError]     = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Category modal
   const [showCatModal, setShowCatModal] = useState(false);
   const [newCatName, setNewCatName]     = useState('');
   const [newCatDesc, setNewCatDesc]     = useState('');
@@ -29,10 +29,12 @@ export default function CreateCoursePage() {
   const [catError, setCatError]         = useState('');
 
   useEffect(() => {
-    fetchCategories().then(setCategories);
+    Promise.all([fetchCategories(), fetchProfessors()]).then(([cats, profs]) => {
+      setCategories(cats);
+      setProfessors(profs);
+    });
   }, []);
 
-  // ── Dropzone ──────────────────────────────────────────────
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0] || null;
     setThumbnail(file);
@@ -52,7 +54,6 @@ export default function CreateCoursePage() {
     multiple: false,
   });
 
-  // ── Handlers ──────────────────────────────────────────────
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setFormError('');
@@ -61,8 +62,9 @@ export default function CreateCoursePage() {
     try {
       await createCourse({
         title, description,
-        category_id: categoryId || undefined,
-        thumbnail:   thumbnail   || undefined,
+        category_id:  categoryId  || undefined,
+        professor_id: professorId || undefined,   // ← NEW
+        thumbnail:    thumbnail   || undefined,
       });
       navigate('/admin/courses');
     } catch (err: any) {
@@ -89,14 +91,9 @@ export default function CreateCoursePage() {
   return (
     <div className="mx-auto max-w-screen-md p-4 md:p-6">
 
-      {/* Page header with back button */}
       <div className="mb-8 flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => navigate('/admin/courses')}
-          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 dark:hover:bg-meta-4 transition"
-        >
-          {/* Left arrow */}
+        <button type="button" onClick={() => navigate('/admin/courses')}
+          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 dark:hover:bg-meta-4 transition">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
@@ -107,7 +104,6 @@ export default function CreateCoursePage() {
         </div>
       </div>
 
-      {/* Card */}
       <div className="rounded-2xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
@@ -116,53 +112,47 @@ export default function CreateCoursePage() {
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
               Course Title <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Introduction to React"
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition"
-            />
+              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition" />
           </div>
 
           {/* Description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Description</label>
+            <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide a brief overview of what students will learn..."
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition resize-none"
-            />
+              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition resize-none" />
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Category
-            </label>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Category</label>
             <div className="flex gap-3">
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-                className="flex-1 rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition"
-              >
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
+                className="flex-1 rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
                 <option value="">— Select a category —</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
+                {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
-              <button
-                type="button"
-                onClick={() => setShowCatModal(true)}
-                className="shrink-0 rounded-lg border border-blue-600 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition"
-              >
+              <button type="button" onClick={() => setShowCatModal(true)}
+                className="shrink-0 rounded-lg border border-blue-600 px-4 py-3 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition">
                 + New Category
               </button>
             </div>
+          </div>
+
+          {/* ── Professor dropdown ── NEW */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+              Assign Professor
+            </label>
+            <select value={professorId} onChange={(e) => setProfessorId(e.target.value ? Number(e.target.value) : '')}
+              className="w-full rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
+              <option value="">— Select a professor —</option>
+              {professors.map((p) => (
+                <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.email})</option>
+              ))}
+            </select>
           </div>
 
           {/* Thumbnail */}
@@ -171,15 +161,11 @@ export default function CreateCoursePage() {
               Thumbnail Image{' '}
               <span className="text-gray-400 text-xs font-normal">(JPEG, PNG, WEBP — max 5MB)</span>
             </label>
-
             {thumbPreview ? (
               <div className="relative w-full h-56 rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
                 <img src={thumbPreview} alt="preview" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => { setThumbnail(null); setThumbPreview(null); }}
-                  className="absolute top-3 right-3 rounded-full bg-black/60 text-white w-8 h-8 flex items-center justify-center hover:bg-black/80 transition text-base"
-                >
+                <button type="button" onClick={() => { setThumbnail(null); setThumbPreview(null); }}
+                  className="absolute top-3 right-3 rounded-full bg-black/60 text-white w-8 h-8 flex items-center justify-center hover:bg-black/80 transition text-base">
                   &times;
                 </button>
                 <div className="absolute bottom-3 left-3 rounded-lg bg-black/50 px-3 py-1 text-xs text-white backdrop-blur-sm">
@@ -188,14 +174,7 @@ export default function CreateCoursePage() {
               </div>
             ) : (
               <div className="transition border border-gray-300 border-dashed cursor-pointer dark:hover:border-brand-500 dark:border-gray-700 rounded-xl hover:border-brand-500">
-                <div
-                  {...getRootProps()}
-                  className={`rounded-xl p-10 ${
-                    isDragActive
-                      ? 'bg-gray-100 dark:bg-gray-800'
-                      : 'bg-gray-50 dark:bg-gray-900'
-                  }`}
-                >
+                <div {...getRootProps()} className={`rounded-xl p-10 ${isDragActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'}`}>
                   <input {...getInputProps()} />
                   <div className="flex flex-col items-center">
                     <div className="mb-5 flex justify-center">
@@ -208,40 +187,25 @@ export default function CreateCoursePage() {
                     <h4 className="mb-2 font-semibold text-gray-800 text-lg dark:text-white/90">
                       {isDragActive ? 'Drop image here' : 'Drag & Drop image here'}
                     </h4>
-                    <span className="text-center mb-5 block text-sm text-gray-500 dark:text-gray-400">
-                      PNG, JPG or WebP — max 5MB
-                    </span>
-                    <span className="font-medium underline text-sm text-brand-500">
-                      Browse File
-                    </span>
+                    <span className="text-center mb-5 block text-sm text-gray-500 dark:text-gray-400">PNG, JPG or WebP — max 5MB</span>
+                    <span className="font-medium underline text-sm text-brand-500">Browse File</span>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Error */}
           {formError && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-              {formError}
-            </p>
+            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{formError}</p>
           )}
 
-          {/* Action buttons */}
           <div className="flex gap-4 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/courses')}
-              className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition"
-            >
+            <button type="button" onClick={() => navigate('/admin/courses')}
+              className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition">
               Cancel
             </button>
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={formLoading}
-              className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60"
-            >
+            <button type="submit" onClick={handleSubmit} disabled={formLoading}
+              className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60">
               {formLoading ? 'Creating...' : 'Create Course'}
             </button>
           </div>
@@ -249,19 +213,14 @@ export default function CreateCoursePage() {
         </form>
       </div>
 
-      {/* ── Create Category Modal ── */}
+      {/* Create Category Modal — unchanged */}
       {showCatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-boxdark shadow-2xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
               <h2 className="text-lg font-bold text-black dark:text-white">New Category</h2>
-              <button
-                type="button"
-                onClick={() => { setShowCatModal(false); setCatError(''); }}
-                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-              >
-                &times;
-              </button>
+              <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); }}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div className="overflow-y-auto px-8 pb-8">
               <form onSubmit={handleCreateCategory} className="space-y-4">
@@ -269,39 +228,26 @@ export default function CreateCoursePage() {
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
                     Name <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                  <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
                     placeholder="e.g. Programming"
-                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500"
-                  />
+                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">Description</label>
-                  <input
-                    type="text" value={newCatDesc} onChange={(e) => setNewCatDesc(e.target.value)}
+                  <input type="text" value={newCatDesc} onChange={(e) => setNewCatDesc(e.target.value)}
                     placeholder="Optional description"
-                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500"
-                  />
+                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500" />
                 </div>
                 {catError && (
-                  <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                    {catError}
-                  </p>
+                  <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{catError}</p>
                 )}
                 <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => { setShowCatModal(false); setCatError(''); }}
-                    className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition"
-                  >
+                  <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); }}
+                    className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    onClick={handleCreateCategory}
-                    disabled={catLoading}
-                    className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60"
-                  >
+                  <button type="submit" onClick={handleCreateCategory} disabled={catLoading}
+                    className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60">
                     {catLoading ? 'Saving...' : 'Create Category'}
                   </button>
                 </div>

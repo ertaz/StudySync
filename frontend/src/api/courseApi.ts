@@ -1,4 +1,3 @@
-// src/api/courseApi.ts
 import api from '../api/axiosInstance';
 
 export interface Category {
@@ -13,14 +12,23 @@ export interface CourseThumbnail {
   filename: string;
 }
 
+export interface Professor {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export interface Course {
   id: number;
   title: string;
   description?: string;
   category_id?: number;
+  professor_id?: number;          
   thumbnail_file_id?: number;
   category?: Category;
   thumbnail?: CourseThumbnail;
+  professor?: Professor;          
   created_at: string;
 }
 
@@ -31,6 +39,9 @@ export const fetchCategories = (): Promise<Category[]> =>
 export const createCategory = (name: string, description?: string): Promise<Category> =>
   api.post('/categories', { name, description }).then((r) => r.data.data);
 
+export const fetchProfessors = (): Promise<Professor[]> =>
+  api.get('/admin/professors').then((r) => r.data.professors);
+
 // ── Courses ───────────────────────────────────────────────────
 export const fetchCourses = (): Promise<Course[]> =>
   api.get('/courses').then((r) => r.data.data);
@@ -38,35 +49,37 @@ export const fetchCourses = (): Promise<Course[]> =>
 export const fetchCourseById = (id: number): Promise<Course> =>
   api.get(`/courses/${id}`).then((r) => r.data.data);
 
-// Create — sends multipart/form-data
 export const createCourse = (payload: {
   title: string;
   description?: string;
   category_id?: number;
+  professor_id?: number;          
   thumbnail?: File;
 }): Promise<Course> => {
   const form = new FormData();
   form.append('title', payload.title);
-  if (payload.description) form.append('description', payload.description);
-  if (payload.category_id) form.append('category_id', String(payload.category_id));
-  if (payload.thumbnail)   form.append('thumbnail', payload.thumbnail);
+  if (payload.description)  form.append('description',  payload.description);
+  if (payload.category_id)  form.append('category_id',  String(payload.category_id));
+  if (payload.professor_id) form.append('professor_id', String(payload.professor_id));  // ← NEW
+  if (payload.thumbnail)    form.append('thumbnail',    payload.thumbnail);
   return api.post('/courses', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }).then((r) => r.data.data);
 };
 
-// Update — sends multipart/form-data (thumbnail is optional)
 export const updateCourse = (id: number, payload: {
   title: string;
   description?: string;
   category_id?: number;
+  professor_id?: number;          
   thumbnail?: File;
 }): Promise<Course> => {
   const form = new FormData();
   form.append('title', payload.title);
-  if (payload.description !== undefined) form.append('description', payload.description);
-  if (payload.category_id) form.append('category_id', String(payload.category_id));
-  if (payload.thumbnail)   form.append('thumbnail', payload.thumbnail);
+  if (payload.description  !== undefined) form.append('description',  payload.description);
+  if (payload.category_id)               form.append('category_id',  String(payload.category_id));
+  if (payload.professor_id)              form.append('professor_id', String(payload.professor_id)); 
+  if (payload.thumbnail)                 form.append('thumbnail',    payload.thumbnail);
   return api.put(`/courses/${id}`, form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }).then((r) => r.data.data);
@@ -75,7 +88,6 @@ export const updateCourse = (id: number, payload: {
 export const deleteCourse = (id: number): Promise<void> =>
   api.delete(`/courses/${id}`).then((r) => r.data);
 
-// Converts a relative DB path to a full URL
 export const getThumbnailUrl = (filePath?: string): string | null => {
   if (!filePath) return null;
   const base = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
