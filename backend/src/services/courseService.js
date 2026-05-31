@@ -1,4 +1,3 @@
-// src/services/courseService.js
 const path       = require('path');
 const fs         = require('fs');
 const courseRepo = require('../repositories/courseRepository');
@@ -13,7 +12,7 @@ const getCourseById = async (id) => {
   return course;
 };
 
-const createCourse = async ({ title, description, category_id, uploadedFile, userId }) => {
+const createCourse = async ({ title, description, category_id, professor_id, uploadedFile, userId }) => {
   let thumbnail_file_id = null;
 
   if (uploadedFile) {
@@ -32,7 +31,8 @@ const createCourse = async ({ title, description, category_id, uploadedFile, use
   const course = await courseRepo.create({
     title,
     description,
-    category_id:       category_id || null,
+    category_id:       category_id  || null,
+    professor_id:      professor_id || null,   // ← NEW
     thumbnail_file_id,
     created_by:        userId,
     updated_by:        userId,
@@ -45,26 +45,20 @@ const createCourse = async ({ title, description, category_id, uploadedFile, use
   return courseRepo.findById(course.id);
 };
 
-const updateCourse = async ({ id, title, description, category_id, uploadedFile, userId }) => {
+const updateCourse = async ({ id, title, description, category_id, professor_id, uploadedFile, userId }) => {
   const course = await courseRepo.findById(id);
   if (!course) throw { status: 404, message: 'Course not found' };
 
   let thumbnail_file_id = course.thumbnail_file_id;
 
-  // If a new image was uploaded, delete the old file and insert a new Files record
   if (uploadedFile) {
-    // 1. Delete old physical file from disk if it exists
     if (course.thumbnail?.file_path) {
       const oldPath = path.join(__dirname, '../../', course.thumbnail.file_path);
       if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
     }
-
-    // 2. Delete old Files record
     if (course.thumbnail_file_id) {
       await fileRepo.deleteFile(course.thumbnail_file_id);
     }
-
-    // 3. Create new Files record
     const relativePath = 'uploads/thumbnails/' + path.basename(uploadedFile.path);
     const fileRecord = await fileRepo.createFile({
       entity:      'course',
@@ -77,11 +71,11 @@ const updateCourse = async ({ id, title, description, category_id, uploadedFile,
     thumbnail_file_id = fileRecord.id;
   }
 
-  // Update the course row
   await courseRepo.update(id, {
     title,
     description,
-    category_id:       category_id || null,
+    category_id:       category_id  || null,
+    professor_id:      professor_id || null,  
     thumbnail_file_id,
     updated_by:        userId,
   });

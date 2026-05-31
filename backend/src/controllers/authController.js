@@ -75,4 +75,13 @@ const me = (req, res) => {
   return res.status(200).json({ user: req.user });
 };
 
-module.exports = { register, login, refresh, logout, me };
+const getProfessors = async (req, res) => {
+  try {
+    const professors = await userRepo.findProfessors(); // make sure userRepo is already required at the top
+    res.json({ success: true, data: professors });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+module.exports = { register, login, refresh, logout, me, getProfessors };

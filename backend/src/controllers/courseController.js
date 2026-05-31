@@ -1,4 +1,3 @@
-// src/controllers/courseController.js
 const courseService = require('../services/courseService');
 
 const getAll = async (req, res) => {
@@ -21,11 +20,12 @@ const getOne = async (req, res) => {
 
 const create = async (req, res) => {
   try {
-    const { title, description, category_id } = req.body;
+    const { title, description, category_id, professor_id } = req.body;
     if (!title) return res.status(400).json({ success: false, message: 'Title is required' });
 
     const course = await courseService.createCourse({
       title, description, category_id,
+      professor_id: professor_id || null,   // ← NEW
       uploadedFile: req.file || null,
       userId: req.user.id,
     });
@@ -37,12 +37,13 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const { title, description, category_id } = req.body;
+    const { title, description, category_id, professor_id } = req.body;
     if (!title) return res.status(400).json({ success: false, message: 'Title is required' });
 
     const course = await courseService.updateCourse({
       id: req.params.id,
       title, description, category_id,
+      professor_id: professor_id || null,   // ← NEW
       uploadedFile: req.file || null,
       userId: req.user.id,
     });

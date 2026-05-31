@@ -74,6 +74,13 @@ const createAuditLog = async (data) => {
   return AuditLog.create(data);
 };
 
+const findProfessors = () =>
+  User.findAll({
+    include: [{ model: Role, through: { attributes: [] }, where: { name: 'professor' }, attributes: [] }],
+    attributes: ['id', 'first_name', 'last_name', 'email'],
+    order: [['first_name', 'ASC']],
+  });
+
 module.exports = {
   findUserByEmail,
   findUserById,
@@ -88,4 +95,5 @@ module.exports = {
   findStudentByNumber,
   createStudentProfile,
   createAuditLog,
+  findProfessors,
 };

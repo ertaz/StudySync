@@ -1,13 +1,14 @@
-// src/repositories/courseRepository.js
-const Course   = require('../models/sql/Course');
-const Category = require('../models/sql/Category');
-const File     = require('../models/sql/File');
+const Course    = require('../models/sql/Course');
+const Category  = require('../models/sql/Category');
+const File      = require('../models/sql/File');
+const User      = require('../models/sql/User');
 
 const getAll = () =>
   Course.findAll({
     include: [
       { model: Category, as: 'category',  attributes: ['id', 'name'] },
       { model: File,     as: 'thumbnail', attributes: ['id', 'file_path', 'filename'] },
+      { model: User,     as: 'professor', attributes: ['id', 'first_name', 'last_name', 'email'] },
     ],
     order: [['created_at', 'DESC']],
   });
@@ -17,6 +18,7 @@ const findById = (id) =>
     include: [
       { model: Category, as: 'category',  attributes: ['id', 'name'] },
       { model: File,     as: 'thumbnail', attributes: ['id', 'file_path', 'filename'] },
+      { model: User,     as: 'professor', attributes: ['id', 'first_name', 'last_name', 'email'] },
     ],
   });
 
