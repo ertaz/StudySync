@@ -1,46 +1,52 @@
+const repository = require('../repositories/assignmentRepository');
 const Assignment = require('../models/sql/Assignment');
 const File = require('../models/sql/File');
 const fileRepository = require('../repositories/fileRepository');
-const repository = require('../repositories/assignmentRepository');
 
+// ─────────────────────────────────────────────
+// GET ALL WITH FILES (OK)
+// ─────────────────────────────────────────────
 const getAllAssignmentsWithFiles = async (userId, role, filters = {}) => {
-  let assignments;
+  const assignments = await repository.getAll(filters);
 
-  if (role === 'professor') {
-    assignments = await repository.getByProfessor(userId, filters);
-  } else if (role === 'student') {
-    assignments = await repository.getByEnrolledStudent(userId, filters);
-  } else {
-    assignments = await repository.getAll(filters);
-  }
-
-  const result = await Promise.all(
+  return Promise.all(
     assignments.map(async (a) => {
       const files = await fileRepository.getByEntity('assignment', a.id);
       return { ...a.toJSON(), attachments: files };
     })
   );
-
-  return result;
 };
 
+// ─────────────────────────────────────────────
+// GET BY ID
+// ─────────────────────────────────────────────
 const getAssignmentByIdWithFiles = async (id) => {
   const assignment = await Assignment.findByPk(id);
-  if (!assignment) throw new Error('Assignment not found');
+
+  if (!assignment) {
+    throw new Error('Assignment not found');
+  }
 
   const files = await fileRepository.getByEntity('assignment', id);
-  return { ...assignment.toJSON(), attachments: files };
+
+  return {
+    ...assignment.toJSON(),
+    attachments: files
+  };
 };
 
+// ─────────────────────────────────────────────
+// CREATE
+// ─────────────────────────────────────────────
 const createAssignment = async (data, userId, files = []) => {
   const assignment = await Assignment.create({
     ...data,
     created_by: userId
   });
 
-  if (files.length > 0) {
+  if (files.length) {
     await Promise.all(
-      files.map((file) =>
+      files.map(file =>
         File.create({
           entity: 'assignment',
           entity_id: assignment.id,
@@ -56,12 +62,16 @@ const createAssignment = async (data, userId, files = []) => {
   return assignment;
 };
 
+// ─────────────────────────────────────────────
+// UPDATE
+// ─────────────────────────────────────────────
 const updateAssignment = async (id, data, userId, files = []) => {
   const assignment = await Assignment.findByPk(id);
+
   if (!assignment) throw new Error('Assignment not found');
 
   if (assignment.created_by !== userId) {
-    throw new Error('Unauthorized: you can only edit your own assignments');
+    throw new Error('Unauthorized');
   }
 
   await Assignment.update(
@@ -69,9 +79,9 @@ const updateAssignment = async (id, data, userId, files = []) => {
     { where: { id } }
   );
 
-  if (files.length > 0) {
+  if (files.length) {
     await Promise.all(
-      files.map((file) =>
+      files.map(file =>
         File.create({
           entity: 'assignment',
           entity_id: id,
@@ -87,29 +97,49 @@ const updateAssignment = async (id, data, userId, files = []) => {
   return Assignment.findByPk(id);
 };
 
+// ─────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────
 const deleteAssignment = async (id, userId) => {
   const assignment = await Assignment.findByPk(id);
-  if (!assignment) throw new Error('Assignment not found');
 
-  if (assignment.created_by !== userId) {
-    throw new Error('Unauthorized: you can only delete your own assignments');
-  }
-
-  await File.destroy({ where: { entity: 'assignment', entity_id: id } });
-  await assignment.destroy();
-};
-
-const deleteAttachment = async (assignmentId, fileId, userId) => {
-  const assignment = await Assignment.findByPk(assignmentId);
   if (!assignment) throw new Error('Assignment not found');
 
   if (assignment.created_by !== userId) {
     throw new Error('Unauthorized');
   }
 
-  await File.destroy({ where: { id: fileId, entity: 'assignment', entity_id: assignmentId } });
+  await File.destroy({
+    where: { entity: 'assignment', entity_id: id }
+  });
+
+  await assignment.destroy();
 };
 
+// ─────────────────────────────────────────────
+// DELETE ATTACHMENT
+// ─────────────────────────────────────────────
+const deleteAttachment = async (assignmentId, fileId, userId) => {
+  const assignment = await Assignment.findByPk(assignmentId);
+
+  if (!assignment) throw new Error('Assignment not found');
+
+  if (assignment.created_by !== userId) {
+    throw new Error('Unauthorized');
+  }
+
+  await File.destroy({
+    where: {
+      id: fileId,
+      entity: 'assignment',
+      entity_id: assignmentId
+    }
+  });
+};
+
+// ─────────────────────────────────────────────
+// STATS
+// ─────────────────────────────────────────────
 const getAssignmentStats = async (userId, role) => {
   return repository.getStats(userId, role);
 };

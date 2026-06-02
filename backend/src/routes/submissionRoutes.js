@@ -1,4 +1,5 @@
 const router = require('express').Router();
+
 const controller = require('../controllers/submissionController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const { checkEnrolled } = require('../middlewares/enrollmentMiddleware');
@@ -12,16 +13,8 @@ const upload = require('../middlewares/submissionUploadMiddleware');
  */
 
 /**
- * @swagger
- * /api/submissions:
- *   get:
- *     summary: Get all submissions (professor/admin only)
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of submissions
+ * GET /api/submissions
+ * Get all submissions (professor/admin only)
  */
 router.get(
   '/',
@@ -31,92 +24,45 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/submissions/{id}:
- *   get:
- *     summary: Get submission by ID
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Submission found
+ * GET /api/submissions/:id
+ * Get submission by ID
  */
-router.get('/:id', authenticate, controller.getOne);
+router.get(
+  '/:id',
+  authenticate,
+  controller.getOne
+);
 
 /**
- * @swagger
- * /api/submissions/user/{userId}:
- *   get:
- *     summary: Get submissions by user
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: User submissions
+ * GET /api/submissions/user/:userId
+ * Get submissions by user
  */
-router.get('/user/:userId', authenticate, controller.getByUser);
+router.get(
+  '/user/:userId',
+  authenticate,
+  controller.getByUser
+);
 
 /**
- * @swagger
- * /api/submissions:
- *   post:
- *     summary: Submit assignment (enrolled students only)
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               assignment_id:
- *                 type: integer
- *               file:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Submission created
+ * POST /api/submissions
+ * Submit assignment (students only, enrolled only)
  */
 router.post(
   '/',
   authenticate,
   authorize('student'),
-  upload.single('file'),
+
+  // IMPORTANT: check access BEFORE file upload
   checkEnrolled,
+
+  upload.single('file'),
+
   controller.create
 );
 
 /**
- * @swagger
- * /api/submissions/{id}:
- *   put:
- *     summary: Grade submission (professor/admin only)
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Submission updated
+ * PUT /api/submissions/:id
+ * Grade submission (professor/admin only)
  */
 router.put(
   '/:id',
@@ -126,22 +72,13 @@ router.put(
 );
 
 /**
- * @swagger
- * /api/submissions/{id}:
- *   delete:
- *     summary: Delete submission
- *     tags: [Submissions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: integer }
- *     responses:
- *       200:
- *         description: Submission deleted
+ * DELETE /api/submissions/:id
+ * Delete submission
  */
-router.delete('/:id', authenticate, controller.remove);
+router.delete(
+  '/:id',
+  authenticate,
+  controller.remove
+);
 
 module.exports = router;

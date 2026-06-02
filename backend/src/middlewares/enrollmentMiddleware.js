@@ -3,23 +3,32 @@ const Assignment = require('../models/sql/Assignment');
 
 const checkEnrolled = async (req, res, next) => {
   try {
-    if (req.user.role === 'professor' || req.user.role === 'admin') {
+    // Admin dhe profesor kalojnë direkt
+    if (['admin', 'professor'].includes(req.user.role)) {
       return next();
     }
 
-    const assignmentId = req.params.id || req.body.assignment_id;
+    const assignmentId =
+      req.params.assignmentId ||
+      req.params.id ||
+      req.body.assignment_id;
 
-    if (!assignmentId) return next();
+    if (!assignmentId) {
+      return next();
+    }
 
     const assignment = await Assignment.findByPk(assignmentId);
 
     if (!assignment) {
-      return res.status(404).json({ success: false, message: 'Assignment not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Assignment not found'
+      });
     }
 
     const enrollment = await Enrollment.findOne({
       where: {
-        user_id:   req.user.id,
+        user_id: req.user.id,
         course_id: assignment.course_id
       }
     });
@@ -32,8 +41,12 @@ const checkEnrolled = async (req, res, next) => {
     }
 
     next();
+
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
 

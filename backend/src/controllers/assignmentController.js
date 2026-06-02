@@ -3,11 +3,11 @@ const service = require('../services/assignmentService');
 const getAll = async (req, res) => {
   try {
     const filters = {
-      title:       req.query.title,
+      title: req.query.title,
       description: req.query.description,
-      course_id:   req.query.course_id,
-      due_from:    req.query.due_from,
-      due_to:      req.query.due_to
+      course_id: req.query.course_id,
+      due_from: req.query.due_from,
+      due_to: req.query.due_to
     };
 
     const data = await service.getAllAssignmentsWithFiles(
@@ -24,18 +24,24 @@ const getAll = async (req, res) => {
 
 const getOne = async (req, res) => {
   try {
-    const data = await service.getAssignmentByIdWithFiles(req.params.id);
+    const data = await service.getAssignmentByIdSecure(
+      req.params.id,
+      req.user.id,
+      req.user.role
+    );
+
     res.json({ success: true, data });
   } catch (err) {
-    res.status(404).json({ success: false, message: err.message });
+    res.status(403).json({ success: false, message: err.message });
   }
 };
 
 const create = async (req, res) => {
   try {
-    const assignment = await service.createAssignment(
+    const assignment = await service.createAssignmentSecure(
       req.body,
       req.user.id,
+      req.user.role,
       req.files || []
     );
 
@@ -56,7 +62,7 @@ const update = async (req, res) => {
 
     res.json({ success: true, data: assignment });
   } catch (err) {
-    const status = err.message.startsWith('Unauthorized') ? 403 : 400;
+    const status = err.message.includes('Unauthorized') ? 403 : 400;
     res.status(status).json({ success: false, message: err.message });
   }
 };
@@ -66,8 +72,7 @@ const remove = async (req, res) => {
     await service.deleteAssignment(req.params.id, req.user.id);
     res.json({ success: true, message: 'Assignment deleted' });
   } catch (err) {
-    const status = err.message.startsWith('Unauthorized') ? 403 : 400;
-    res.status(status).json({ success: false, message: err.message });
+    res.status(403).json({ success: false, message: err.message });
   }
 };
 
@@ -81,14 +86,17 @@ const removeAttachment = async (req, res) => {
 
     res.json({ success: true, message: 'Attachment deleted' });
   } catch (err) {
-    const status = err.message.startsWith('Unauthorized') ? 403 : 400;
-    res.status(status).json({ success: false, message: err.message });
+    res.status(403).json({ success: false, message: err.message });
   }
 };
 
 const getStats = async (req, res) => {
   try {
-    const data = await service.getAssignmentStats(req.user.id, req.user.role);
+    const data = await service.getAssignmentStats(
+      req.user.id,
+      req.user.role
+    );
+
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
