@@ -11,6 +11,7 @@ const adminRoutes      = require('./routes/adminRoutes');
 const categoryRoutes   = require('./routes/categoryRoutes');
 const courseRoutes     = require('./routes/courseRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const courseContentRoutes = require('./routes/courseContentRoutes');
 
 const swaggerUi   = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
@@ -38,11 +39,14 @@ app.use('/api/admin',       adminRoutes);
 app.use('/api/categories',  categoryRoutes);
 app.use('/api/courses',     courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/course-content', courseContentRoutes);
 
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });
 });
 
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: 'Internal server error.' });
