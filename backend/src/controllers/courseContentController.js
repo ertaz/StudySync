@@ -40,3 +40,42 @@ exports.deleteSection = async (req, res) => {
     });
   }
 };
+
+// LESSONS
+exports.createLesson = async (req, res) => {
+  try {
+    const data = await service.createLesson({
+      section_id: req.body.section_id,
+      title: req.body.title,
+      description: req.body.description,
+      file: req.file,
+      created_by: req.user.id,
+    });
+
+    res.json(data);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error creating lesson" });
+  }
+};
+
+exports.updateLesson = async (req, res) => {
+  try {
+    const data = await service.updateLesson(
+      req.params.id,
+      req.body,
+      req.file,
+      req.user
+    );
+
+    res.json(data);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error updating lesson" });
+  }
+};
+
+exports.deleteLesson = async (req, res) => {
+  await service.deleteLesson(req.params.id, req.user);
+  res.json({ success: true });
+};
