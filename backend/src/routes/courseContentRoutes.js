@@ -27,6 +27,32 @@ router.delete(
   controller.deleteSection
 );
 
+// Lessons
+
+
+router.post(
+  "/lessons",
+  authenticate,
+  authorize("admin", "professor"),
+  lessonUpload.single("file"),
+  controller.createLesson
+);
+
+router.put(
+  "/lessons/:id",
+  authenticate,
+  authorize("admin", "professor"),
+  lessonUpload.single("file"),
+  controller.updateLesson
+);
+
+router.delete(
+  '/lessons/:id',
+  authenticate,
+  authorize('admin', 'professor'),
+  controller.deleteLesson
+);
+
 
 
 module.exports = router;
