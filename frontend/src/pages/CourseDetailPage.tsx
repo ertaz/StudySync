@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchCourseById, Course } from '../api/courseApi';
+import CourseContent from "../components/course/CourseContent";
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -115,13 +116,11 @@ export default function CourseDetailPage() {
 
       {/* Placeholder for future content (lessons, etc.) */}
       <div className="mt-6 rounded-2xl border border-dashed border-stroke bg-white/50 dark:border-strokedark dark:bg-boxdark/50 px-8 py-16 text-center">
-        <span className="text-4xl">🚧</span>
-        <p className="mt-3 text-base font-medium text-gray-500 dark:text-gray-400">
-          Lessons coming soon
-        </p>
-        <p className="mt-1 text-sm text-gray-400">
-          Course content will appear here once it's published.
-        </p>
+      
+
+     {<CourseContent courseId={Number(id)} />}
+        
+        
       </div>
 
     </div>
@@ -140,3 +139,4 @@ function getBannerColor(id: number): string {
   ];
   return colors[id % colors.length];
 }
+
