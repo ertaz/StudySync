@@ -4,13 +4,23 @@ const { Op } = require('sequelize');
 const findUserByEmail = async (email) => {
   return User.findOne({
     where: { email },
-    include: [{ model: Role, through: { attributes: [] }, attributes: ['id', 'name'] }],
+    include: [{ 
+      model: Role, 
+      as: 'roles', // RREGULLUAR
+      through: { attributes: [] }, 
+      attributes: ['id', 'name'] 
+    }],
   });
 };
 
 const findUserById = async (id) => {
   return User.findByPk(id, {
-    include: [{ model: Role, through: { attributes: [] }, attributes: ['id', 'name'] }],
+    include: [{ 
+      model: Role, 
+      as: 'roles', // RREGULLUAR
+      through: { attributes: [] }, 
+      attributes: ['id', 'name'] 
+    }],
     attributes: { exclude: ['password_hash'] },
   });
 };
@@ -76,7 +86,13 @@ const createAuditLog = async (data) => {
 
 const findProfessors = () =>
   User.findAll({
-    include: [{ model: Role, through: { attributes: [] }, where: { name: 'professor' }, attributes: [] }],
+    include: [{ 
+      model: Role, 
+      as: 'roles', // RREGULLUAR
+      through: { attributes: [] }, 
+      where: { name: 'professor' }, 
+      attributes: [] 
+    }],
     attributes: ['id', 'first_name', 'last_name', 'email'],
     order: [['first_name', 'ASC']],
   });

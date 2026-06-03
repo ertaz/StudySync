@@ -26,6 +26,14 @@ import CourseDetailPage from './pages/CourseDetailPage';
 import AdminCoursesPage from "./pages/Admin/AdminCoursesPage";
 import CreateCoursePage  from './pages/Admin/CreateCoursePage';
 
+import Dashboard from "./pages/professor/Dashboard";
+import Assignments from "./pages/professor/Assignments";
+import AssignmentForm from "./pages/professor/AssignmentForm";
+import AssignmentDetail from "./pages/professor/AssignmentDetail";
+import AssignmentSubs from "./pages/professor/AssignmentSubs";
+import Stats from "./pages/professor/Stats";
+import DataTools from "./pages/professor/DataTools";
+
 // ── Protects routes from unauthenticated users ────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -103,6 +111,48 @@ const AppRoutes = () => {
         <Route path="/videos"        element={<Videos />} />
         <Route path="/line-chart"    element={<LineChart />} />
         <Route path="/bar-chart"     element={<BarChart />} />
+
+
+        <Route
+  path="/dashboard"
+  element={<Dashboard />}
+/>
+
+<Route
+  path="/assignments"
+  element={<Assignments />}
+/>
+
+<Route
+  path="/assignments/new"
+  element={<AssignmentForm />}
+/>
+
+<Route
+  path="/assignments/:id"
+  element={<AssignmentDetail />}
+/>
+
+<Route
+  path="/assignments/:id/edit"
+  element={<AssignmentForm />}
+/>
+
+<Route
+  path="/assignments/:id/submissions"
+  element={<AssignmentSubs />}
+/>
+
+<Route
+  path="/stats"
+  element={<Stats />}
+/>
+
+<Route
+  path="/data-tools"
+  element={<DataTools />}
+/>
+    
       </Route>
 
       <Route path="*" element={<NotFound />} />

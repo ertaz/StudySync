@@ -32,12 +32,14 @@ const getAllProfessors = async () => {
     include: [
       {
         model: Role,
+        as: 'roles', // RREGULLUAR
         through: { attributes: [] },
         attributes: ['name'],
         where: { name: 'professor' },
       },
       {
         model: ProfessorProfile,
+        as: 'professorProfile', // RREGULLUAR (Mungesa e kësaj do të shkaktonte errorin tjetër!)
         attributes: ['title', 'department', 'years_of_experience', 'phone_number'],
       },
     ],
