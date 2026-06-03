@@ -6,15 +6,14 @@ import {
   CalenderIcon,
   ChevronDownIcon,
   GridIcon,
-  HorizontaLDots,
   ListIcon,
-  PageIcon,
   PieChartIcon,
   PlugInIcon,
   UserCircleIcon,
 } from "../icons";
 
 import { useSidebar } from "../context/SidebarContext";
+import { useAuth } from "../context/AuthContext";
 import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
@@ -89,8 +88,18 @@ const othersItems: NavItem[] = [
   },
 ];
 
+const ShieldIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="1.8"
+    strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"/>
+    <path d="M9 12l2 2 4-4"/>
+  </svg>
+);
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { user } = useAuth(); 
   const location = useLocation();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
@@ -202,7 +211,6 @@ const AppSidebar: React.FC = () => {
             )
           )}
 
-          {/* SUBMENU */}
           {item.subItems && (isExpanded || isHovered || isMobileOpen) && (
             <div
               ref={(el) => {
@@ -239,6 +247,8 @@ const AppSidebar: React.FC = () => {
     </ul>
   );
 
+  const isAdminPanelActive = location.pathname.startsWith("/admin");
+
   return (
     <aside
       className={`fixed left-0 top-0 z-50 flex h-screen flex-col border-r bg-white transition-all dark:bg-gray-900
@@ -268,6 +278,28 @@ const AppSidebar: React.FC = () => {
         <nav className="px-5">
           <h2 className="mb-4 text-xs text-gray-400">MENU</h2>
           {renderItems(navItems, "main")}
+
+          {/* ✅ ADMIN PANEL ADDED HERE */}
+          {user?.role === "admin" && (
+            <div className="mt-4">
+              <Link
+                to="/admin"
+                className={`menu-item ${
+                  isAdminPanelActive
+                    ? "menu-item-active"
+                    : "menu-item-inactive"
+                }`}
+              >
+                <span className="menu-item-icon-size">
+                  <ShieldIcon />
+                </span>
+
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="menu-item-text">Admin Panel</span>
+                )}
+              </Link>
+            </div>
+          )}
 
           <h2 className="mb-4 mt-6 text-xs text-gray-400">OTHERS</h2>
           {renderItems(othersItems, "others")}

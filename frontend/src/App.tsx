@@ -33,6 +33,7 @@ import AssignmentDetail from "./pages/professor/AssignmentDetail";
 import AssignmentSubs from "./pages/professor/AssignmentSubs";
 import Stats from "./pages/professor/Stats";
 import DataTools from "./pages/professor/DataTools";
+import AdminPanel       from "./pages/Admin/AdminPanel";
 
 // ── Protects routes from unauthenticated users ────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -86,7 +87,8 @@ const AppRoutes = () => {
           <AppLayout />
         </AdminRoute>
       }>
-        <Route index element={<AdminDashboard />} />
+      <Route index element={<AdminPanel />} />
+      <Route path="professors" element={<AdminDashboard />} />
        <Route path="courses" element={<AdminCoursesPage />} />
       </Route>
       <Route path="/admin/courses/create" element={<CreateCoursePage />} />

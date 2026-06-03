@@ -48,13 +48,28 @@ const login = async (req, res) => {
 };
 
 // ── POST /api/auth/refresh ────────────────────────────────────
+
 const refresh = async (req, res) => {
   try {
     const rawToken = req.cookies.refreshToken;
-    const { accessToken, user } = await authService.refresh(rawToken);
-    return res.status(200).json({ accessToken, user });
+
+    const {
+      accessToken,
+      refreshToken: newRefreshToken,
+      user,
+    } = await authService.refresh(rawToken);
+
+    // Replace old refresh cookie with the new one
+    setRefreshCookie(res, newRefreshToken);
+
+    return res.status(200).json({
+      accessToken,
+      user,
+    });
   } catch (err) {
-    return res.status(err.status || 500).json({ message: err.message || 'Server error.' });
+    return res.status(err.status || 500).json({
+      message: err.message || 'Server error.',
+    });
   }
 };
 

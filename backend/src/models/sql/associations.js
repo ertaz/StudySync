@@ -1,18 +1,18 @@
-const Course            = require('./Course');
-const Category          = require('./Category');
-const Enrollment        = require('./Enrollment');
-const User              = require('./User');
-const File              = require('./File');
-const Assignment        = require('./Assignment');
-const Submission        = require('./Submission');
-const CourseSection     = require('./CourseSection');
-const Lesson            = require('./Lesson');
-const Role              = require('./Role');
-const UserRole          = require('./UserRole');
-const ProfessorProfile  = require('./ProfessorProfile');
-const StudentProfile    = require('./StudentProfile');
-const RefreshToken      = require('./RefreshToken');
-const AuditLog          = require('./AuditLog');
+const Course           = require('./Course');
+const Category         = require('./Category');
+const Enrollment       = require('./Enrollment');
+const User             = require('./User');
+const File             = require('./File');
+const Assignment       = require('./Assignment');
+const Submission       = require('./Submission');
+const CourseSection    = require('./CourseSection');
+const Lesson           = require('./Lesson');
+const Role             = require('./Role');
+const UserRole         = require('./UserRole');
+const ProfessorProfile = require('./ProfessorProfile');
+const StudentProfile   = require('./StudentProfile');
+const RefreshToken     = require('./RefreshToken');
+const AuditLog         = require('./AuditLog');
 
 // ─────────────────────────────────────────────
 // USER ↔ ROLE
@@ -20,131 +20,84 @@ const AuditLog          = require('./AuditLog');
 User.belongsToMany(Role, {
   through: UserRole,
   foreignKey: 'user_id',
-  otherKey: 'role_id',
-  as: 'roles'
+  otherKey:   'role_id',
+  as: 'roles',
 });
-
 Role.belongsToMany(User, {
   through: UserRole,
   foreignKey: 'role_id',
-  otherKey: 'user_id',
-  as: 'users'
+  otherKey:   'user_id',
+  as: 'users',
 });
 
 // ─────────────────────────────────────────────
-// USER RELATIONS
+// USER — PROFILES / TOKENS / AUDIT
 // ─────────────────────────────────────────────
-User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens', onDelete: 'CASCADE' });
-RefreshToken.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(RefreshToken,    { foreignKey: 'user_id', as: 'refreshTokens',   onDelete: 'CASCADE' });
+RefreshToken.belongsTo(User,  { foreignKey: 'user_id', as: 'user' });
 
-User.hasOne(StudentProfile, { foreignKey: 'user_id', as: 'studentProfile', onDelete: 'CASCADE' });
-StudentProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasOne(StudentProfile,   { foreignKey: 'user_id', as: 'studentProfile',  onDelete: 'CASCADE' });
+StudentProfile.belongsTo(User,{ foreignKey: 'user_id', as: 'user' });
 
-User.hasOne(ProfessorProfile, { foreignKey: 'user_id', as: 'professorProfile', onDelete: 'CASCADE' });
+User.hasOne(ProfessorProfile,    { foreignKey: 'user_id', as: 'professorProfile', onDelete: 'CASCADE' });
 ProfessorProfile.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
-User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'auditLogs' });
-AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasMany(AuditLog,    { foreignKey: 'user_id', as: 'auditLogs' });
+AuditLog.belongsTo(User,  { foreignKey: 'user_id', as: 'user' });
 
 // ─────────────────────────────────────────────
 // CATEGORY ↔ COURSE
 // ─────────────────────────────────────────────
 Course.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
-Category.hasMany(Course, { foreignKey: 'category_id', as: 'courses' });
+Category.hasMany(Course,   { foreignKey: 'category_id', as: 'courses'  });
+
+// ─────────────────────────────────────────────
+// COURSE — THUMBNAIL (File) ← WAS MISSING
+// ─────────────────────────────────────────────
+Course.belongsTo(File, { foreignKey: 'thumbnail_file_id', as: 'thumbnail' });
+File.hasOne(Course,    { foreignKey: 'thumbnail_file_id', as: 'course'    });
+
+// ─────────────────────────────────────────────
+// COURSE — PROFESSOR (User) ← WAS MISSING
+// ─────────────────────────────────────────────
+Course.belongsTo(User, { foreignKey: 'professor_id', as: 'professor'     });
+User.hasMany(Course,   { foreignKey: 'professor_id', as: 'taughtCourses' });
 
 // ─────────────────────────────────────────────
 // COURSE ↔ ENROLLMENT
 // ─────────────────────────────────────────────
-User.hasMany(Enrollment, { foreignKey: 'user_id', as: 'enrollments', onDelete: 'CASCADE' });
-Enrollment.belongsTo(User, { foreignKey: 'user_id', as: 'student' });
+User.hasMany(Enrollment,   { foreignKey: 'user_id',   as: 'enrollments', onDelete: 'CASCADE' });
+Enrollment.belongsTo(User, { foreignKey: 'user_id',   as: 'student' });
 
-Course.hasMany(Enrollment, { foreignKey: 'course_id', as: 'enrollments', onDelete: 'CASCADE' });
+Course.hasMany(Enrollment,   { foreignKey: 'course_id', as: 'enrollments', onDelete: 'CASCADE' });
 Enrollment.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
 
 // ─────────────────────────────────────────────
-// COURSE ↔ SECTION
+// COURSE ↔ SECTION ↔ LESSON
 // ─────────────────────────────────────────────
-Course.hasMany(CourseSection, {
-  foreignKey: 'course_id',
-  as: 'sections',
-  onDelete: 'CASCADE'
-});
+Course.hasMany(CourseSection,   { foreignKey: 'course_id',  as: 'sections', onDelete: 'CASCADE' });
+CourseSection.belongsTo(Course, { foreignKey: 'course_id',  as: 'course' });
 
-CourseSection.belongsTo(Course, {
-  foreignKey: 'course_id',
-  as: 'course'
-});
+CourseSection.hasMany(Lesson,   { foreignKey: 'section_id', as: 'lessons',  onDelete: 'CASCADE', hooks: true });
+Lesson.belongsTo(CourseSection, { foreignKey: 'section_id', as: 'section' });
 
 // ─────────────────────────────────────────────
-// SECTION ↔ LESSON
+// FILE ↔ LESSON
 // ─────────────────────────────────────────────
-CourseSection.hasMany(Lesson, {
-  foreignKey: 'section_id',
-  as: 'lessons',
-  onDelete: 'CASCADE',
-  hooks: true
-});
-
-Lesson.belongsTo(CourseSection, {
-  foreignKey: 'section_id',
-  as: 'section'
-});
-
-// ─────────────────────────────────────────────
-// FILE ↔ LESSON (FIXED CLEAN)
-// ─────────────────────────────────────────────
-Lesson.belongsTo(File, {
-  foreignKey: 'file_id',
-  as: 'file'
-});
-
-File.hasMany(Lesson, {
-  foreignKey: 'file_id',
-  as: 'lessons'
-});
+Lesson.belongsTo(File, { foreignKey: 'file_id', as: 'file'    });
+File.hasMany(Lesson,   { foreignKey: 'file_id', as: 'lessons' });
 
 // ─────────────────────────────────────────────
 // COURSE ↔ ASSIGNMENT ↔ SUBMISSION
 // ─────────────────────────────────────────────
-Course.hasMany(Assignment, {
-  foreignKey: 'course_id',
-  as: 'assignments',
-  onDelete: 'CASCADE'
-});
+Course.hasMany(Assignment,   { foreignKey: 'course_id',      as: 'assignments', onDelete: 'CASCADE' });
+Assignment.belongsTo(Course, { foreignKey: 'course_id',      as: 'course' });
 
-Assignment.belongsTo(Course, {
-  foreignKey: 'course_id',
-  as: 'course'
-});
+Assignment.hasMany(Submission,   { foreignKey: 'assignment_id', as: 'submissions', onDelete: 'CASCADE' });
+Submission.belongsTo(Assignment, { foreignKey: 'assignment_id', as: 'assignment' });
 
-Assignment.hasMany(Submission, {
-  foreignKey: 'assignment_id',
-  as: 'submissions',
-  onDelete: 'CASCADE'
-});
+User.hasMany(Submission,   { foreignKey: 'user_id', as: 'submissions', onDelete: 'CASCADE' });
+Submission.belongsTo(User, { foreignKey: 'user_id', as: 'student' });
 
-Submission.belongsTo(Assignment, {
-  foreignKey: 'assignment_id',
-  as: 'assignment'
-});
-
-User.hasMany(Submission, {
-  foreignKey: 'user_id',
-  as: 'submissions',
-  onDelete: 'CASCADE'
-});
-
-Submission.belongsTo(User, {
-  foreignKey: 'user_id',
-  as: 'student'
-});
-
-File.hasMany(Submission, {
-  foreignKey: 'file_id',
-  as: 'submissions'
-});
-
-Submission.belongsTo(File, {
-  foreignKey: 'file_id',
-  as: 'file'
-});
+File.hasMany(Submission,   { foreignKey: 'file_id', as: 'submissions' });
+Submission.belongsTo(File, { foreignKey: 'file_id', as: 'file' });

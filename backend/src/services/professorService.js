@@ -47,7 +47,7 @@ const createProfessor = async ({
     updated_by:          admin_id,
   });
 
-  // 7. Audit log — record which admin created this professor
+  // 7. Audit log
   await repo.createAuditLog({
     user_id:    admin_id,
     action:     'CREATE_PROFESSOR',
@@ -73,4 +73,85 @@ const getAllProfessors = async () => {
   return repo.getAllProfessors();
 };
 
-module.exports = { createProfessor, getAllProfessors };
+// ── Update Professor ──────────────────────────────────────────
+const updateProfessor = async ({
+  professor_id, first_name, last_name, email, password,
+  title, department, years_of_experience, phone_number,
+  admin_id, ip,
+}) => {
+
+  // 1. Make sure the professor exists
+  const professor = await repo.getProfessorById(professor_id);
+  if (!professor) {
+    throw { status: 404, message: 'Professor not found.' };
+  }
+
+  // 2. Email uniqueness check — allow keeping the same email
+  const existing = await repo.findUserByEmail(email);
+  if (existing && existing.id !== professor_id) {
+    throw { status: 409, message: 'This email is already used by another user.' };
+  }
+
+  // 3. Build the userData object for the Users table
+  const userData = {
+    first_name,
+    last_name,
+    email,
+    updated_by: admin_id,
+  };
+
+  // 4. If admin provided a new password, hash it and include it
+  if (password && password.trim() !== '') {
+    userData.password_hash = await bcrypt.hash(password, 12);
+  }
+
+  // 5. Profile fields
+  const profileData = {
+    title:               title               || null,
+    department:          department          || null,
+    years_of_experience: years_of_experience || 0,
+    phone_number:        phone_number        || null,
+    updated_by:          admin_id,
+  };
+
+  await repo.updateProfessor(professor_id, userData, profileData);
+
+  // 6. Audit log — note whether password was changed
+  await repo.createAuditLog({
+    user_id:    admin_id,
+    action:     'UPDATE_PROFESSOR',
+    entity:     'User',
+    entity_id:  professor_id,
+    new_value:  JSON.stringify({
+      email, first_name, last_name, department,
+      password_changed: !!(password && password.trim() !== ''),
+    }),
+    ip_address: ip,
+  });
+
+  return { id: professor_id, first_name, last_name, email, department, title };
+};
+
+// ── Delete (deactivate) Professor ─────────────────────────────
+const deleteProfessor = async ({ professor_id, admin_id, ip }) => {
+
+  const professor = await repo.getProfessorById(professor_id);
+  if (!professor) {
+    throw { status: 404, message: 'Professor not found.' };
+  }
+
+  await repo.deactivateProfessor(professor_id);
+
+  await repo.createAuditLog({
+    user_id:    admin_id,
+    action:     'DELETE_PROFESSOR',
+    entity:     'User',
+    entity_id:  professor_id,
+    new_value:  JSON.stringify({ is_active: 0 }),
+    ip_address: ip,
+  });
+
+  return { message: 'Professor deactivated successfully.' };
+};
+
+module.exports = { createProfessor, getAllProfessors, updateProfessor, deleteProfessor };

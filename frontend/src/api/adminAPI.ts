@@ -20,3 +20,13 @@ export const getAllProfessorsAPI = async () => {
   const response = await api.get('/admin/professors');
   return response.data;
 };
+
+export const updateProfessorAPI = async (id: number, data: object) => {
+  const res = await api.put(`/admin/professors/${id}`, data);
+  return res.data;
+};
+
+export const deleteProfessorAPI = async (id: number) => {
+  const res = await api.delete(`/admin/professors/${id}`);
+  return res.data;
+};

@@ -29,22 +29,65 @@ const createProfessorProfile = async (data) => {
 
 const getAllProfessors = async () => {
   return User.findAll({
+    where: { is_active: 1 },
     include: [
       {
         model: Role,
-        as: 'roles', // RREGULLUAR
-        through: { attributes: [] },
+        as: 'roles',
+        where: { name: 'professor' }, 
         attributes: ['name'],
-        where: { name: 'professor' },
+        through: { attributes: [] },
+        required: true
       },
       {
         model: ProfessorProfile,
-        as: 'professorProfile', // RREGULLUAR (Mungesa e kësaj do të shkaktonte errorin tjetër!)
-        attributes: ['title', 'department', 'years_of_experience', 'phone_number'],
+        as: 'professorProfile',
+        attributes: [
+          'title',
+          'department',
+          'years_of_experience',
+          'phone_number'
+        ],
+        required: false
+      }
+    ],
+    attributes: { exclude: ['password_hash'] }
+  });
+};
+
+const getProfessorById = async (user_id) => {
+  return User.findOne({
+    where: { id: user_id },
+    include: [
+      {
+        model: Role,
+        as: 'roles',
+        through: { attributes: [] },
+        attributes: ['name'],
+        required: false
+      },
+      {
+        model: ProfessorProfile,
+        as: 'professorProfile', 
+        attributes: [
+          'title',
+          'department',
+          'years_of_experience',
+          'phone_number'
+        ],
       },
     ],
     attributes: { exclude: ['password_hash'] },
   });
+};
+
+const updateProfessor = async (user_id, userData, profileData) => {
+  await User.update(userData, { where: { id: user_id } });
+  await ProfessorProfile.update(profileData, { where: { user_id } });
+};
+
+const deactivateProfessor = async (user_id) => {
+  return User.update({ is_active: 0 }, { where: { id: user_id } });
 };
 
 const createAuditLog = async (data) => {
@@ -59,5 +102,8 @@ module.exports = {
   assignRoleToUser,
   createProfessorProfile,
   getAllProfessors,
+  getProfessorById,
+  updateProfessor,
+  deactivateProfessor,
   createAuditLog,
 };

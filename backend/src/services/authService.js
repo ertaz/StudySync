@@ -85,7 +85,7 @@ const login = async ({ email, password, ip }) => {
   }
 
   // 4. Get the user's role name
-  const roleName = user.Roles?.[0]?.name || 'student';
+  const roleName = user.roles?.[0]?.name || 'student';
 
   // 5. Build JWT payload
   const payload = { id: user.id, email: user.email, role: roleName };
@@ -133,17 +133,45 @@ const refresh = async (rawRefreshToken) => {
     throw { status: 401, message: 'Invalid or expired refresh token.' };
   }
 
-  const tokenHash   = hashToken(rawRefreshToken);
+  const tokenHash = hashToken(rawRefreshToken);
+
   const storedToken = await repo.findRefreshToken(tokenHash);
   if (!storedToken) {
     throw { status: 401, message: 'Refresh token has been revoked or expired.' };
   }
 
-  const payload     = { id: decoded.id, email: decoded.email, role: decoded.role };
-  const accessToken = generateAccessToken(payload);
-  const user        = { id: decoded.id, email: decoded.email, role: decoded.role };
+  // Revoke old refresh token
+  await repo.revokeRefreshToken(tokenHash);
 
-  return { accessToken, user };
+  const payload = {
+    id: decoded.id,
+    email: decoded.email,
+    role: decoded.role,
+  };
+
+  // Create new tokens
+  const accessToken = generateAccessToken(payload);
+  const refreshToken = generateRefreshToken(payload);
+
+  // Store new refresh token
+  const newTokenHash = hashToken(refreshToken);
+  await repo.saveRefreshToken(
+    decoded.id,
+    newTokenHash,
+    getRefreshTokenExpiry()
+  );
+
+  const user = {
+    id: decoded.id,
+    email: decoded.email,
+    role: decoded.role,
+  };
+
+  return {
+    accessToken,
+    refreshToken,
+    user,
+  };
 };
 
 // ── Logout ────────────────────────────────────────────────────
