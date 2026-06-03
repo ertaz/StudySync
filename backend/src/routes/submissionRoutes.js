@@ -13,8 +13,11 @@ const upload = require('../middlewares/submissionUploadMiddleware');
  */
 
 /**
- * GET /api/submissions
- * Get all submissions (professor/admin only)
+ * @swagger
+ * /api/submissions:
+ *   get:
+ *     summary: Get all submissions (professor/admin only)
+ *     tags: [Submissions]
  */
 router.get(
   '/',
@@ -24,8 +27,11 @@ router.get(
 );
 
 /**
- * GET /api/submissions/:id
- * Get submission by ID
+ * @swagger
+ * /api/submissions/{id}:
+ *   get:
+ *     summary: Get submission by ID
+ *     tags: [Submissions]
  */
 router.get(
   '/:id',
@@ -34,8 +40,11 @@ router.get(
 );
 
 /**
- * GET /api/submissions/user/:userId
- * Get submissions by user
+ * @swagger
+ * /api/submissions/user/{userId}:
+ *   get:
+ *     summary: Get submissions by user
+ *     tags: [Submissions]
  */
 router.get(
   '/user/:userId',
@@ -44,25 +53,27 @@ router.get(
 );
 
 /**
- * POST /api/submissions
- * Submit assignment (students only, enrolled only)
+ * @swagger
+ * /api/submissions:
+ *   post:
+ *     summary: Submit assignment (students only, enrolled only)
+ *     tags: [Submissions]
  */
 router.post(
   '/',
   authenticate,
   authorize('student'),
-
-  // IMPORTANT: check access BEFORE file upload
   checkEnrolled,
-
   upload.single('file'),
-
   controller.create
 );
 
 /**
- * PUT /api/submissions/:id
- * Grade submission (professor/admin only)
+ * @swagger
+ * /api/submissions/{id}:
+ *   put:
+ *     summary: Grade submission (professor/admin only)
+ *     tags: [Submissions]
  */
 router.put(
   '/:id',
@@ -72,8 +83,11 @@ router.put(
 );
 
 /**
- * DELETE /api/submissions/:id
- * Delete submission
+ * @swagger
+ * /api/submissions/{id}:
+ *   delete:
+ *     summary: Delete submission
+ *     tags: [Submissions]
  */
 router.delete(
   '/:id',

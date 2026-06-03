@@ -1,13 +1,16 @@
 const service = require('../services/assignmentService');
 
+// ─────────────────────────────────────────────
+// GET ALL
+// ─────────────────────────────────────────────
 const getAll = async (req, res) => {
   try {
     const filters = {
-      title: req.query.title,
+      title:       req.query.title,
       description: req.query.description,
-      course_id: req.query.course_id,
-      due_from: req.query.due_from,
-      due_to: req.query.due_to
+      course_id:   req.query.course_id,
+      due_from:    req.query.due_from,
+      due_to:      req.query.due_to
     };
 
     const data = await service.getAllAssignmentsWithFiles(
@@ -22,6 +25,10 @@ const getAll = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────
+// GET ONE — FIX #9
+// Thërret getAssignmentByIdSecure (enrollment check)
+// ─────────────────────────────────────────────
 const getOne = async (req, res) => {
   try {
     const data = await service.getAssignmentByIdSecure(
@@ -32,10 +39,15 @@ const getOne = async (req, res) => {
 
     res.json({ success: true, data });
   } catch (err) {
-    res.status(403).json({ success: false, message: err.message });
+    const status = err.message.includes('not found') ? 404 : 403;
+    res.status(status).json({ success: false, message: err.message });
   }
 };
 
+// ─────────────────────────────────────────────
+// CREATE — FIX #10
+// Thërret createAssignmentSecure (course ownership check)
+// ─────────────────────────────────────────────
 const create = async (req, res) => {
   try {
     const assignment = await service.createAssignmentSecure(
@@ -47,10 +59,15 @@ const create = async (req, res) => {
 
     res.status(201).json({ success: true, data: assignment });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    const status = err.message.includes('Unauthorized') ? 403 : 400;
+    res.status(status).json({ success: false, message: err.message });
   }
 };
 
+// ─────────────────────────────────────────────
+// UPDATE
+// (pa ndryshim)
+// ─────────────────────────────────────────────
 const update = async (req, res) => {
   try {
     const assignment = await service.updateAssignment(
@@ -67,15 +84,24 @@ const update = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────
+// DELETE — FIX #4 & #7
+// Thërret deleteAssignment (fshi fajlla + submissions)
+// ─────────────────────────────────────────────
 const remove = async (req, res) => {
   try {
     await service.deleteAssignment(req.params.id, req.user.id);
     res.json({ success: true, message: 'Assignment deleted' });
   } catch (err) {
-    res.status(403).json({ success: false, message: err.message });
+    const status = err.message.includes('not found') ? 404 : 403;
+    res.status(status).json({ success: false, message: err.message });
   }
 };
 
+// ─────────────────────────────────────────────
+// DELETE ATTACHMENT
+// (pa ndryshim)
+// ─────────────────────────────────────────────
 const removeAttachment = async (req, res) => {
   try {
     await service.deleteAttachment(
@@ -86,10 +112,15 @@ const removeAttachment = async (req, res) => {
 
     res.json({ success: true, message: 'Attachment deleted' });
   } catch (err) {
-    res.status(403).json({ success: false, message: err.message });
+    const status = err.message.includes('not found') ? 404 : 403;
+    res.status(status).json({ success: false, message: err.message });
   }
 };
 
+// ─────────────────────────────────────────────
+// STATS
+// (pa ndryshim)
+// ─────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
     const data = await service.getAssignmentStats(

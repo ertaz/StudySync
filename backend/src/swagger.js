@@ -1,3 +1,5 @@
+// src/swagger.js
+
 const swaggerJsdoc = require('swagger-jsdoc');
 const path = require('path');
 
@@ -14,7 +16,7 @@ const options = {
     servers: [
       {
         url: 'http://localhost:5000',
-        description: 'Local development server',
+        description: 'Local server',
       },
     ],
 
@@ -26,26 +28,6 @@ const options = {
           bearerFormat: 'JWT',
         },
       },
-
-      schemas: {
-        AssignmentCreate: {
-          type: 'object',
-          required: ['course_id', 'title'],
-          properties: {
-            course_id: { type: 'integer' },
-            title: { type: 'string' },
-            description: { type: 'string' },
-            deadline: {
-              type: 'string',
-              format: 'date-time'
-            },
-            max_grade: {
-              type: 'number',
-              default: 100
-            }
-          }
-        }
-      }
     },
 
     security: [

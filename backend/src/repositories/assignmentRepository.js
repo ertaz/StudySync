@@ -1,12 +1,11 @@
 const { Op } = require('sequelize');
 const Assignment = require('../models/sql/Assignment');
 const Course = require('../models/sql/Course');
-const File = require('../models/sql/File');
 const Enrollment = require('../models/sql/Enrollment');
 const Submission = require('../models/sql/Submission');
 
 // ─────────────────────────────────────────────
-// GET ALL
+// GET ALL (unchanged)
 // ─────────────────────────────────────────────
 const getAll = async (filters = {}) => {
   const where = {};
@@ -37,13 +36,14 @@ const getAll = async (filters = {}) => {
 };
 
 // ─────────────────────────────────────────────
-// GET STATS (FIXED)
+// FIXED STATS (CORRECT VERSION)
 // ─────────────────────────────────────────────
 const getStats = async (userId, role) => {
   const now = new Date();
 
   let assignments = [];
 
+  // ───────── professor
   if (role === 'professor') {
     assignments = await Assignment.findAll({
       where: { created_by: userId },
@@ -51,6 +51,7 @@ const getStats = async (userId, role) => {
     });
   }
 
+  // ───────── student
   else if (role === 'student') {
     const enrollments = await Enrollment.findAll({
       where: { user_id: userId },
@@ -65,31 +66,39 @@ const getStats = async (userId, role) => {
     });
   }
 
+  // ───────── admin
   else {
     assignments = await Assignment.findAll({
       attributes: ['id', 'deadline']
     });
   }
 
-  const ids = assignments.map(a => a.id);
+  const assignmentIds = assignments.map(a => a.id);
 
+  // ✅ FIX 1: unique submissions per assignment (not total rows only)
   const submittedCount = await Submission.count({
+    distinct: true,
+    col: 'assignment_id',
     where: {
-      assignment_id: { [Op.in]: ids }
+      assignment_id: { [Op.in]: assignmentIds }
     }
   });
 
-  const overdue = assignments.filter(
+  // ✅ FIX 2: overdue only counts assignments past deadline
+  const overdueCount = assignments.filter(
     a => a.deadline && new Date(a.deadline) < now
   ).length;
 
   const total = assignments.length;
 
+  // ✅ FIX 3: correct pending logic
+  const pending = Math.max(total - submittedCount, 0);
+
   return {
     total,
     submitted: submittedCount,
-    overdue,
-    pending: Math.max(total - submittedCount - overdue, 0)
+    overdue: overdueCount,
+    pending
   };
 };
 

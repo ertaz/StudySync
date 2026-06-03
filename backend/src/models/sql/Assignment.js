@@ -1,40 +1,66 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
 
+// FIXES:
+// 1. course_id — shtohet references + onDelete CASCADE
+//    (nëse kursi fshihet, assignments e tij fshihen automatikisht)
+// 2. created_by — shtohet allowNull: false (profesori duhet regjistruar)
+// 3. max_grade — shtohet validate min:0 për të shmangur nota negative
+
 const Assignment = sequelize.define('Assignment', {
+
   id: {
-    type: DataTypes.INTEGER,
+    type:          DataTypes.INTEGER,
     autoIncrement: true,
-    primaryKey: true
+    primaryKey:    true
   },
 
   course_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false
+    type:       DataTypes.INTEGER,
+    allowNull:  false,
+    references: {
+      model: 'Courses',
+      key:   'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'   // kurs i fshirë → assignments fshihen
   },
 
   title: {
-    type: DataTypes.STRING(255),
+    type:      DataTypes.STRING(255),
     allowNull: false
   },
 
-  description: DataTypes.TEXT,
-
-  deadline: DataTypes.DATE,
-
-  max_grade: {
-    type: DataTypes.DECIMAL(5,2),
-    defaultValue: 100
+  description: {
+    type: DataTypes.TEXT
   },
 
-  created_by: DataTypes.INTEGER,
-  updated_by: DataTypes.INTEGER
+  deadline: {
+    type: DataTypes.DATE
+  },
+
+  max_grade: {
+    type:         DataTypes.DECIMAL(5, 2),
+    defaultValue: 100,
+    validate: {
+      min: 0       // FIX: nota nuk mund të jetë negative
+    }
+  },
+
+  created_by: {
+    type:      DataTypes.INTEGER,
+    allowNull: false   // FIX: assignment pa krijues nuk ka sens
+  },
+
+  updated_by: {
+    type: DataTypes.INTEGER
+  }
 
 }, {
-  tableName: 'Assignments',
+  tableName:  'Assignments',
   timestamps: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  createdAt:  'created_at',
+  updatedAt:  'updated_at'
 });
 
 module.exports = Assignment;
