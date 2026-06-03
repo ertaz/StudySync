@@ -1,26 +1,29 @@
 const sequelize = require('../config/db');
 
-const User             = require('./sql/User');
-const Role             = require('./sql/Role');
-const UserRole         = require('./sql/UserRole');
-const RefreshToken     = require('./sql/RefreshToken');
-const StudentProfile   = require('./sql/StudentProfile');
+// models
+const User = require('./sql/User');
+const Role = require('./sql/Role');
+const UserRole = require('./sql/UserRole');
+const RefreshToken = require('./sql/RefreshToken');
+const StudentProfile = require('./sql/StudentProfile');
 const ProfessorProfile = require('./sql/ProfessorProfile');
-const AuditLog         = require('./sql/AuditLog');
-const CourseSection    = require('./sql/CourseSection');
-const Lesson           = require('./sql/Lesson');
-const Course           = require('./sql/Course');
-const File             = require('./sql/File');
-const Category         = require('./sql/Category');
-const Enrollment       = require('./sql/Enrollment');
-const Assignment       = require('./sql/Assignment');
-const Submission       = require('./sql/Submission');
+const AuditLog = require('./sql/AuditLog');
+const CourseSection = require('./sql/CourseSection');
+const Lesson = require('./sql/Lesson');
+const Course = require('./sql/Course');
+const File = require('./sql/File');
+const Category = require('./sql/Category');
+const Enrollment = require('./sql/Enrollment');
+const Assignment = require('./sql/Assignment');
+const Submission = require('./sql/Submission');
 
-// 🔥 IMPORTANT: vetëm import i associations (NUK deklarohen këtu)
+// associations (vetëm lidhje, pa imports të rrezikshëm)
 require('./sql/associations');
 
-module.exports = {
+const db = {
   sequelize,
+  Sequelize: require('sequelize'),
+
   User,
   Role,
   UserRole,
@@ -37,3 +40,5 @@ module.exports = {
   Assignment,
   Submission,
 };
+
+module.exports = db;
