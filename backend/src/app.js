@@ -15,6 +15,11 @@ const assignmentRoutes      = require('./routes/assignmentRoutes');
 const submissionRoutes      = require('./routes/submissionRoutes');
 const assignmentReportRoutes = require('./routes/assignmentReportRoutes');
 
+// ── Lab 2 — new routes ────────────────────────────────────────
+const studentRoutes    = require('./routes/studentRoutes');
+const professorRoutes  = require('./routes/professorRoutes');
+const reportRoutes     = require('./routes/reportRoutes');
+
 const swaggerUi   = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 
@@ -35,16 +40,21 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: t
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Routes
+// ── Existing routes ───────────────────────────────────────────
 app.use('/api/auth',                   authRoutes);
 app.use('/api/admin',                  adminRoutes);
 app.use('/api/categories',             categoryRoutes);
 app.use('/api/courses',                courseRoutes);
 app.use('/api/enrollments',            enrollmentRoutes);
 app.use('/api/course-content',         courseContentRoutes);
-app.use('/api/assignments/reports',    assignmentReportRoutes); // ← must come before /api/assignments
+app.use('/api/assignments/reports',    assignmentReportRoutes); // must come before /api/assignments
 app.use('/api/assignments',            assignmentRoutes);
 app.use('/api/submissions',            submissionRoutes);
+
+// ── Lab 2 — new routes ────────────────────────────────────────
+app.use('/api/students',               studentRoutes);    // export/import students
+app.use('/api/professors',             professorRoutes);  // export/import + list professors
+app.use('/api/reports',                reportRoutes);     // dynamic report generation
 
 // 404
 app.use((req, res) => {

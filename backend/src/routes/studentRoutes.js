@@ -2,9 +2,8 @@ const express    = require('express');
 const router     = express.Router();
 const multer     = require('multer');
 
-const controller                        = require('../controllers/enrollmentController');
-const enrollmentExportImportController  = require('../controllers/enrollmentExportImportController');
-const { authenticate, authorize }       = require('../middlewares/authMiddleware');
+const studentExportImportController = require('../controllers/studentExportImportController');
+const { authenticate, authorize }   = require('../middlewares/authMiddleware');
 
 const importStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/imports'),
@@ -15,17 +14,17 @@ const uploadImport = multer({ storage: importStorage });
 /**
  * @swagger
  * tags:
- *   name: Enrollments
- *   description: Course enrollment endpoints
+ *   name: Students
+ *   description: Student management endpoints
  */
 
 // ── Export ────────────────────────────────────────────────────
 /**
  * @swagger
- * /api/enrollments/export:
+ * /api/students/export:
  *   get:
- *     summary: Export enrollments (csv, excel, json)
- *     tags: [Enrollments]
+ *     summary: Export students (csv, excel, json)
+ *     tags: [Students]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -40,16 +39,16 @@ router.get(
   '/export',
   authenticate,
   authorize('admin'),
-  enrollmentExportImportController.exportEnrollments
+  studentExportImportController.exportStudents
 );
 
 // ── Import ────────────────────────────────────────────────────
 /**
  * @swagger
- * /api/enrollments/import:
+ * /api/students/import:
  *   post:
- *     summary: Import enrollments from CSV or Excel
- *     tags: [Enrollments]
+ *     summary: Import students from CSV or Excel
+ *     tags: [Students]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -70,12 +69,7 @@ router.post(
   authenticate,
   authorize('admin'),
   uploadImport.single('file'),
-  enrollmentExportImportController.importEnrollments
+  studentExportImportController.importStudents
 );
-
-// ── Existing ──────────────────────────────────────────────────
-router.post('/:courseId', authenticate, authorize('student'), controller.enroll);
-router.get('/me',         authenticate, controller.getMyEnrollments);
-router.get('/check/:courseId', authenticate, controller.checkEnrollment);
 
 module.exports = router;

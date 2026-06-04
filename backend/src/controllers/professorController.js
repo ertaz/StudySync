@@ -38,6 +38,24 @@ const getAllProfessors = async (req, res) => {
   }
 };
 
+// ── GET /api/admin/professors/:id ─────────────────────────────
+const getProfessorById = async (req, res) => {
+  try {
+    const professor_id = parseInt(req.params.id);
+    const professor = await professorService.getProfessorById(professor_id); // Sigurohu që ky funksion ekziston në service
+    
+    if (!professor) {
+      return res.status(404).json({ message: 'Professor not found.' });
+    }
+    
+    return res.status(200).json({ professor });
+  } catch (err) {
+    return res.status(err.status || 500).json({
+      message: err.message || 'Server error.',
+    });
+  }
+};
+
 // ── PUT /api/admin/professors/:id ─────────────────────────────
 const updateProfessor = async (req, res) => {
   try {
@@ -83,4 +101,10 @@ const deleteProfessor = async (req, res) => {
   }
 };
 
-module.exports = { createProfessor, getAllProfessors, updateProfessor, deleteProfessor };
+module.exports = { 
+  createProfessor, 
+  getAllProfessors, 
+  getProfessorById, 
+  updateProfessor, 
+  deleteProfessor 
+};

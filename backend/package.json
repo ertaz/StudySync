@@ -10,7 +10,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
@@ -28,12 +27,11 @@
     "pdfkit": "^0.18.0",
     "sequelize": "^6.37.8",
     "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "xlsx": "^0.18.5"
   },
-
   "devDependencies": {
     "nodemon": "^3.1.14",
     "sequelize-cli": "^6.6.5"
   }
-
 }

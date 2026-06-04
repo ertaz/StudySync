@@ -1,8 +1,18 @@
-const express  = require('express');
-const router   = express.Router();
-const courseController = require('../controllers/courseController');
-const { authenticate, authorize } = require('../middlewares/authMiddleware');
-const upload   = require('../middlewares/uploadMiddleware');
+const express        = require('express');
+const router         = express.Router();
+const multer         = require('multer');
+const path           = require('path');
+
+const courseController             = require('../controllers/courseController');
+const courseExportImportController = require('../controllers/courseExportImportController');
+const { authenticate, authorize }  = require('../middlewares/authMiddleware');
+const upload                       = require('../middlewares/uploadMiddleware');
+
+const importStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/imports'),
+  filename:    (req, file, cb) => cb(null, Date.now() + '-' + file.originalname),
+});
+const uploadImport = multer({ storage: importStorage });
 
 /**
  * @swagger
@@ -11,77 +21,64 @@ const upload   = require('../middlewares/uploadMiddleware');
  *   description: Course management endpoints
  */
 
+// ── Export ────────────────────────────────────────────────────
 /**
  * @swagger
- * /api/courses:
+ * /api/courses/export:
  *   get:
- *     summary: Get all courses
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of courses
- *       401:
- *         description: Unauthorized
- */
-router.get('/', authenticate, courseController.getAll);
-
-/**
- * @swagger
- * /api/courses/{id}:
- *   get:
- *     summary: Get a single course by ID
+ *     summary: Export courses (csv, excel, json)
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
+ *       - in: query
+ *         name: format
+ *         schema: { type: string, enum: [csv, excel, json] }
  *     responses:
  *       200:
- *         description: Course object
- *       404:
- *         description: Course not found
+ *         description: File download
  */
-router.get('/:id', authenticate, courseController.getOne);
+router.get(
+  '/export',
+  authenticate,
+  authorize('admin'),
+  courseExportImportController.exportCourses
+);
 
+// ── Import ────────────────────────────────────────────────────
 /**
  * @swagger
- * /api/courses:
+ * /api/courses/import:
  *   post:
- *     summary: Create a new course (admin only)
+ *     summary: Import courses from CSV or Excel
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
- *       required: true
  *       content:
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required: [title, created_by]
  *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               category_id:
- *                 type: integer
- *               professor_id:
- *                 type: integer
- *               thumbnail:
+ *               file:
  *                 type: string
  *                 format: binary
  *     responses:
- *       201:
- *         description: Course created
- *       403:
- *         description: Forbidden - admin only
+ *       200:
+ *         description: Import result summary
  */
+router.post(
+  '/import',
+  authenticate,
+  authorize('admin'),
+  uploadImport.single('file'),
+  courseExportImportController.importCourses
+);
+
+// ── Existing ──────────────────────────────────────────────────
+router.get('/',    authenticate, courseController.getAll);
+router.get('/:id', authenticate, courseController.getOne);
+
 router.post(
   '/',
   authenticate,
@@ -90,45 +87,6 @@ router.post(
   courseController.create
 );
 
-/**
- * @swagger
- * /api/courses/{id}:
- *   put:
- *     summary: Update a course (admin only)
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               category_id:
- *                 type: integer
- *               professor_id:
- *                 type: integer
- *               thumbnail:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: Course updated
- *       403:
- *         description: Forbidden - admin only
- *       404:
- *         description: Course not found
- */
 router.put(
   '/:id',
   authenticate,
@@ -137,28 +95,6 @@ router.put(
   courseController.update
 );
 
-/**
- * @swagger
- * /api/courses/{id}:
- *   delete:
- *     summary: Delete a course (admin only)
- *     tags: [Courses]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Course deleted
- *       403:
- *         description: Forbidden - admin only
- *       404:
- *         description: Course not found
- */
 router.delete('/:id', authenticate, authorize('admin'), courseController.remove);
 
 module.exports = router;
