@@ -1,105 +1,118 @@
-const repository = require("../repositories/submissionRepository");
-const File = require("../models/sql/File");
-const Submission = require("../models/sql/Submission");
-const Assignment = require("../models/sql/Assignment");
-const Enrollment = require("../models/sql/Enrollment");
+const repository     = require('../repositories/submissionRepository');
+const File           = require('../models/sql/File');
+const SubmissionFile = require('../models/sql/SubmissionFile');
+const Submission     = require('../models/sql/Submission');
+const Assignment     = require('../models/sql/Assignment');
+const Enrollment     = require('../models/sql/Enrollment');
 
-const getAllSubmissions = () => repository.getAll();
+const getAllSubmissions         = (query = {}) => repository.getAll(query);
+const getSubmissionById        = (id)         => repository.findById(id);
+const getSubmissionsByAssignment = (id, query = {}) => repository.getByAssignment(id, query);
+const getSubmissionsByUser     = (id)         => repository.getByUser(id);
 
-const getSubmissionById = (id) => repository.findById(id);
-
-const getSubmissionsByAssignment = (id) =>
-  repository.getByAssignment(id);
-
-const getSubmissionsByUser = (id) =>
-  repository.getByUser(id);
-
-/**
- * 🔥 FIXED CREATE SUBMISSION (MAIN FIX)
- */
-const createSubmission = async ({
-  assignment_id,
-  user_id,
-  file,
-  created_by,
-}) => {
-  // 1. Check assignment exists
-  const assignment = await Assignment.findByPk(assignment_id);
-  if (!assignment) {
-    throw new Error("Assignment not found");
-  }
-
-  // 2. Check enrollment (double safety layer)
-  const enrolled = await Enrollment.findOne({
-    where: {
-      user_id,
-      course_id: assignment.course_id,
-    },
+// ✅ Student sheh submission e tij (null nëse nuk ka dorëzuar)
+const getMySubmission = (assignmentId, userId) =>
+  repository.findExistingSubmission(assignmentId, userId).then((sub) => {
+    if (!sub) return null;
+    return repository.findById(sub.id);
   });
 
-  if (!enrolled) {
-    throw new Error("You are not enrolled in this course");
-  }
+// ─────────────────────────────────────────────
+// CREATE  (multi-file)
+// ─────────────────────────────────────────────
+const createSubmission = async ({ assignment_id, user_id, files, created_by }) => {
+  const assignment = await Assignment.findByPk(assignment_id);
+  if (!assignment) throw new Error('Assignment not found');
 
-  // 3. Prevent duplicate submission
-  const existing =
-    await repository.findExistingSubmission(
-      assignment_id,
-      user_id
-    );
+  const enrolled = await Enrollment.findOne({
+    where: { user_id, course_id: assignment.course_id },
+  });
+  if (!enrolled) throw new Error('You are not enrolled in this course');
 
-  if (existing) {
-    throw new Error(
-      "You have already submitted this assignment"
-    );
-  }
+  const existing = await repository.findExistingSubmission(assignment_id, user_id);
+  if (existing) throw new Error('You have already submitted this assignment');
 
-  // 4. Check deadline
-  if (
-    assignment.deadline &&
-    new Date() > new Date(assignment.deadline)
-  ) {
-    throw new Error("Deadline has passed");
-  }
+  const now    = new Date();
+  const isLate = assignment.deadline && now > new Date(assignment.deadline) ? 1 : 0;
 
-  // 5. Create submission FIRST
   const submission = await Submission.create({
     assignment_id,
     user_id,
-    file_id: null,
+    submitted_at: now,
+    is_late:      isLate,
     created_by,
   });
 
-  // 6. Handle file AFTER submission exists (FIXED)
-  if (file) {
-    const fileRecord = await File.create({
-      entity: "submission",
-      entity_id: submission.id,
-      filename: file.originalname,
-      file_path: `uploads/submissions/${file.filename}`,
-      file_size: file.size,
-      uploaded_by: created_by,
-    });
-
-    submission.file_id = fileRecord.id;
-    await submission.save();
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const fileRecord = await File.create({
+        entity:      'submission',
+        entity_id:   submission.id,
+        filename:    file.originalname,
+        file_path:   `uploads/submissions/${file.filename}`,
+        file_size:   file.size,
+        uploaded_by: created_by,
+      });
+      await SubmissionFile.create({
+        submission_id: submission.id,
+        file_id:       fileRecord.id,
+      });
+    }
   }
 
-  return submission;
+  return repository.findById(submission.id);
 };
 
-const updateSubmission = (id, data) =>
-  repository.update(id, data);
+// ✅ Student shton file të reja tek submission ekzistuese
+const addFilesToSubmission = async ({ submissionId, userId, files }) => {
+  const submission = await repository.findById(submissionId);
+  if (!submission) throw new Error('Submission not found');
+  if (submission.user_id !== userId) throw new Error('Not authorized');
 
-const deleteSubmission = (id) =>
-  repository.destroy(id);
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const fileRecord = await File.create({
+        entity:      'submission',
+        entity_id:   submission.id,
+        filename:    file.originalname,
+        file_path:   `uploads/submissions/${file.filename}`,
+        file_size:   file.size,
+        uploaded_by: userId,
+      });
+      await SubmissionFile.create({
+        submission_id: submission.id,
+        file_id:       fileRecord.id,
+      });
+    }
+  }
+
+  return repository.findById(submission.id);
+};
+
+// ✅ Student fshin një file të vetme nga submission e tij
+const removeFileFromSubmission = async ({ fileId, userId }) => {
+  const submissionFile = await SubmissionFile.findByPk(fileId, {
+    include: [{ model: require('../models/sql/Submission'), as: 'submission' }],
+  });
+  if (!submissionFile) throw new Error('File not found');
+  if (submissionFile.submission.user_id !== userId) throw new Error('Not authorized');
+
+  await File.destroy({ where: { id: submissionFile.file_id } });
+  await submissionFile.destroy();
+};
+
+const updateSubmission   = (id, data) => repository.update(id, data);
+const deleteSubmission   = (id)       => repository.destroy(id);
 
 module.exports = {
   getAllSubmissions,
   getSubmissionById,
   getSubmissionsByAssignment,
   getSubmissionsByUser,
+  getMySubmission,
   createSubmission,
+  addFilesToSubmission,
+  removeFileFromSubmission,
   updateSubmission,
   deleteSubmission,
 };

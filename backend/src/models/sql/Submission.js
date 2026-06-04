@@ -1,13 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
 
-// FIX: onDelete: 'CASCADE' duhet të jetë brenda `references` objektit,
-// ose të vendoset si opsion i asociacionit në associations.js.
-// Kur vendoset drejtpërdrejt në fushë (jashtë references), Sequelize
-// e injoron plotësisht — CASCADE nuk krijohet në DB.
-
 const Submission = sequelize.define('Submission', {
-
   id: {
     type:          DataTypes.INTEGER,
     autoIncrement: true,
@@ -15,36 +9,31 @@ const Submission = sequelize.define('Submission', {
   },
 
   assignment_id: {
-    type:       DataTypes.INTEGER,
-    allowNull:  false,
-    references: {
-      model: 'Assignments',
-      key:   'id'
-    },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE'   // ← FIX: brenda references/field level Sequelize e lexon këtu
+    type:      DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'Assignments', key: 'id' },
+    onUpdate:  'CASCADE',
+    onDelete:  'CASCADE'
   },
 
   user_id: {
-    type:       DataTypes.INTEGER,
-    allowNull:  false,
-    references: {
-      model: 'Users',
-      key:   'id'
-    },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE'
+    type:      DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'Users', key: 'id' },
+    onUpdate:  'CASCADE',
+    onDelete:  'CASCADE'
   },
 
-  file_id: {
-    type:       DataTypes.INTEGER,
-    allowNull:  true,
-    references: {
-      model: 'Files',
-      key:   'id'
-    },
-    onUpdate: 'CASCADE',
-    onDelete: 'SET NULL'  // nëse fajlli fshihet, submission mbetet (pa file)
+  // file_id HIQET — zëvendësohet nga SubmissionFiles
+
+  submitted_at: {
+    type:         DataTypes.DATE,
+    defaultValue: DataTypes.NOW   // koha e dorëzimit, e rëndësishme për filtrin "me vonesë/në kohë"
+  },
+
+  is_late: {
+    type:         DataTypes.TINYINT,
+    defaultValue: 0   // llogaritet në backend kur krijohet: submitted_at > assignment.deadline
   },
 
   grade: {

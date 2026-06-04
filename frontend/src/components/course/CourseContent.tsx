@@ -76,6 +76,7 @@ export default function CourseContent({ courseId }: { courseId: number }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isProfessor = user?.role === "admin" || user?.role === "professor";
+  const isStudent = user?.role === "student";
 
   // ── Sections / Lessons state ──
   const [sections, setSections] = useState<any[]>([]);
@@ -380,7 +381,6 @@ export default function CourseContent({ courseId }: { courseId: number }) {
               </div>
 
               <div className="flex items-center gap-2 ml-2 relative">
-                {/* Lesson/Assignment count badges */}
                 <span className="text-xs text-gray-400 hidden sm:inline">
                   {lessonCount} lesson{lessonCount !== 1 ? "s" : ""}
                 </span>
@@ -603,8 +603,18 @@ export default function CourseContent({ courseId }: { courseId: number }) {
                               </div>
                             )}
                             <div className="flex flex-wrap gap-3 mt-1 items-center">
-                              <span className="text-xs text-orange-600 font-medium">
+                              {/* Deadline + late indicator */}
+                              <span className={`text-xs font-medium ${
+                                new Date() > new Date(assignment.deadline)
+                                  ? "text-red-500"
+                                  : "text-orange-600"
+                              }`}>
                                 ⏰ {new Date(assignment.deadline).toLocaleString()}
+                                {new Date() > new Date(assignment.deadline) && (
+                                  <span className="ml-1 bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full text-xs">
+                                    Closed
+                                  </span>
+                                )}
                               </span>
                               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                                 Max: {assignment.max_grade}pts
@@ -634,53 +644,76 @@ export default function CourseContent({ courseId }: { courseId: number }) {
                           </div>
                         </div>
 
-                        {isProfessor && (
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* Submissions button — always visible */}
-                            <button
-                              onClick={() => navigate(`/assignments/${assignment.id}/submissions`)}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
-                            >
-                              👥 Submissions
-                            </button>
+                        {/* ── ACTIONS: profesor sheh submissions, studenti submit ── */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
 
-                            {/* ⋮ menu — edit / delete */}
-                            <div className="relative">
+                          {/* PROFESOR: submissions button + edit/delete menu */}
+                          {isProfessor && (
+                            <>
                               <button
-                                onClick={() =>
-                                  setOpenMenu(
-                                    openMenu.id === assignment.id && openMenu.type === "assignment"
-                                      ? { type: null, id: null }
-                                      : { type: "assignment", id: assignment.id }
-                                  )
-                                }
-                                className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700 transition-colors"
+                                onClick={() => navigate(`/assignments/${assignment.id}/submissions`)}
+                                className="text-xs px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
                               >
-                                ⋮
+                                👥 Submissions
                               </button>
-                              {openMenu.type === "assignment" && openMenu.id === assignment.id && (
-                                <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 shadow-lg rounded-lg w-36 py-1">
-                                  <button
-                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-                                    onClick={() => openEditAssignment(assignment, sec.id)}
-                                  >
-                                    ✏️ Edit
-                                  </button>
-                                  <button
-                                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                    onClick={() => {
-                                      setDeleteAssignmentId(assignment.id);
-                                      setDeleteAssignmentSectionId(sec.id);
-                                      setOpenMenu({ type: null, id: null });
-                                    }}
-                                  >
-                                    🗑 Delete
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
+
+                              <div className="relative">
+                                <button
+                                  onClick={() =>
+                                    setOpenMenu(
+                                      openMenu.id === assignment.id && openMenu.type === "assignment"
+                                        ? { type: null, id: null }
+                                        : { type: "assignment", id: assignment.id }
+                                    )
+                                  }
+                                  className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700 transition-colors"
+                                >
+                                  ⋮
+                                </button>
+                                {openMenu.type === "assignment" && openMenu.id === assignment.id && (
+                                  <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 shadow-lg rounded-lg w-36 py-1">
+                                    <button
+                                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                                      onClick={() => openEditAssignment(assignment, sec.id)}
+                                    >
+                                      ✏️ Edit
+                                    </button>
+                                    <button
+                                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                      onClick={() => {
+                                        setDeleteAssignmentId(assignment.id);
+                                        setDeleteAssignmentSectionId(sec.id);
+                                        setOpenMenu({ type: null, id: null });
+                                      }}
+                                    >
+                                      🗑 Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* ── STUDENT: submit button ── */}
+                          {isStudent && (
+                            <button
+                              onClick={() =>
+                                navigate(`/assignments/${assignment.id}/submit`)
+                              }
+                              disabled={new Date() > new Date(assignment.deadline)}
+                              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors whitespace-nowrap ${
+                                new Date() > new Date(assignment.deadline)
+                                  ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+                                  : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                              }`}
+                            >
+                              {new Date() > new Date(assignment.deadline)
+                                ? "⛔ Closed"
+                                : "📤 Submit"}
+                            </button>
+                          )}
+
+                        </div>
                       </div>
                     ))
                   )}
@@ -949,5 +982,4 @@ function AssignmentFormFields({
         />
       </div>
     </>
-  );
-}
+  );}

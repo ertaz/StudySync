@@ -1,74 +1,44 @@
-const Submission = require("../models/sql/Submission");
-const Assignment = require("../models/sql/Assignment");
-const User = require("../models/sql/User");
-const File = require("../models/sql/File");
+const Submission     = require('../models/sql/Submission');
+const SubmissionFile = require('../models/sql/SubmissionFile');
+const Assignment     = require('../models/sql/Assignment');
+const User           = require('../models/sql/User');
+const File           = require('../models/sql/File');
 
-// ─────────────────────────────────────────────
-// GET ALL
-// ─────────────────────────────────────────────
-const getAll = () =>
-  Submission.findAll({
-    include: [
-      { model: Assignment, as: "assignment" },
-      {
-        model: User,
-        as: "student",
-        attributes: ["id", "first_name", "last_name", "email"],
-      },
-      { model: File, as: "file" },
-    ],
-    order: [["created_at", "DESC"]],
-  });
+const submissionIncludes = [
+  { model: Assignment, as: 'assignment' },
+  { model: User, as: 'student', attributes: ['id', 'first_name', 'last_name', 'email'] },
+  { model: SubmissionFile, as: 'submissionFiles', include: [{ model: File, as: 'file' }] },
+];
 
-// ─────────────────────────────────────────────
-// FIND BY ID
-// ─────────────────────────────────────────────
-const findById = (id) =>
-  Submission.findByPk(id, {
-    include: ["assignment", "student", "file"],
-  });
+const getAll = ({ filter, sort, order } = {}) => {
+  const where = {};
+  if (filter === 'late')   where.is_late = 1;
+  if (filter === 'ontime') where.is_late = 0;
+  const sortField = ['submitted_at', 'created_at'].includes(sort) ? sort : 'created_at';
+  const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+  return Submission.findAll({ where, include: submissionIncludes, order: [[sortField, sortOrder]] });
+};
 
-// ─────────────────────────────────────────────
-// FILTERS
-// ─────────────────────────────────────────────
-const getByAssignment = (assignmentId) =>
-  Submission.findAll({
-    where: { assignment_id: assignmentId },
-    include: ["student", "file"],
-  });
+const getByAssignment = (assignmentId, { filter, sort, order } = {}) => {
+  const where = { assignment_id: assignmentId };
+  if (filter === 'late')   where.is_late = 1;
+  if (filter === 'ontime') where.is_late = 0;
+  const sortField = ['submitted_at', 'created_at'].includes(sort) ? sort : 'created_at';
+  const sortOrder = order === 'asc' ? 'ASC' : 'DESC';
+  return Submission.findAll({ where, include: submissionIncludes, order: [[sortField, sortOrder]] });
+};
 
 const getByUser = (userId) =>
-  Submission.findAll({
-    where: { user_id: userId },
-    include: ["assignment", "file"],
-  });
+  Submission.findAll({ where: { user_id: userId }, include: submissionIncludes, order: [['created_at', 'DESC']] });
 
-// ─────────────────────────────────────────────
-// FIX SUPPORT (used in service #2 fix)
-// ─────────────────────────────────────────────
+const findById = (id) =>
+  Submission.findByPk(id, { include: submissionIncludes });
+
 const findExistingSubmission = (assignment_id, user_id) =>
-  Submission.findOne({
-    where: { assignment_id, user_id },
-  });
+  Submission.findOne({ where: { assignment_id, user_id } });
 
-// ─────────────────────────────────────────────
-// CRUD
-// ─────────────────────────────────────────────
-const create = (data) => Submission.create(data);
+const create  = (data) => Submission.create(data);
+const update  = (id, data) => Submission.update(data, { where: { id } });
+const destroy = (id) => Submission.destroy({ where: { id } });
 
-const update = (id, data) =>
-  Submission.update(data, { where: { id } });
-
-const destroy = (id) =>
-  Submission.destroy({ where: { id } });
-
-module.exports = {
-  getAll,
-  findById,
-  getByAssignment,
-  getByUser,
-  findExistingSubmission,
-  create,
-  update,
-  destroy,
-};
+module.exports = { getAll, findById, getByAssignment, getByUser, findExistingSubmission, create, update, destroy };

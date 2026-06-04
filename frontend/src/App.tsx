@@ -35,6 +35,8 @@ import Stats from "./pages/professor/Stats";
 import DataTools from "./pages/professor/DataTools";
 import AdminPanel       from "./pages/Admin/AdminPanel";
 
+import SubmissionForm from "./pages/student/SubmissionForm";
+
 // ── Protects routes from unauthenticated users ────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -113,7 +115,10 @@ const AppRoutes = () => {
         <Route path="/videos"        element={<Videos />} />
         <Route path="/line-chart"    element={<LineChart />} />
         <Route path="/bar-chart"     element={<BarChart />} />
-
+        <Route
+  path="/assignments/:assignmentId/submit"
+  element={<SubmissionForm />}
+/>
 
         <Route
   path="/dashboard"
