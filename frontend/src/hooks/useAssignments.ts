@@ -1,26 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 import {
   Assignment,
   getAssignments,
 } from "../services/assignmentService";
 
-export const useAssignments = () => {
-  const [assignments, setAssignments] =
-    useState<Assignment[]>([]);
+type Filters = {
+  course_id?: number;
+  section_id?: number;
+  title?: string;
+  description?: string;
+};
 
-  const [loading, setLoading] =
-    useState(true);
+export const useAssignments = (initialFilters: Filters = {}) => {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [error, setError] =
-    useState("");
+  const [filters, setFilters] = useState<Filters>(initialFilters);
 
-  const loadAssignments = async () => {
+  const loadAssignments = useCallback(async (customFilters?: Filters) => {
     try {
       setLoading(true);
 
-      const data =
-        await getAssignments();
+      const activeFilters = customFilters || filters;
+
+      const data = await getAssignments(activeFilters);
 
       setAssignments(data);
     } catch (err: any) {
@@ -31,17 +36,22 @@ export const useAssignments = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     loadAssignments();
-  }, []);
+  }, [loadAssignments]);
 
   return {
     assignments,
     setAssignments,
+
     loading,
     error,
+
     reload: loadAssignments,
+
+    filters,
+    setFilters,
   };
 };

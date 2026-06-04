@@ -25,6 +25,16 @@ const Assignment = sequelize.define('Assignment', {
     onUpdate: 'CASCADE',
     onDelete: 'CASCADE'   // kurs i fshirë → assignments fshihen
   },
+  section_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'CourseSections',
+      key: 'id'
+    },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
 
   title: {
     type:      DataTypes.STRING(255),

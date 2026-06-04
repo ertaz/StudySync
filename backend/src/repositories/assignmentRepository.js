@@ -1,13 +1,14 @@
 const { Op } = require('sequelize');
 const Assignment = require('../models/sql/Assignment');
 const Course = require('../models/sql/Course');
+const CourseSection = require('../models/sql/CourseSection');
 const Enrollment = require('../models/sql/Enrollment');
 const Submission = require('../models/sql/Submission');
 
 // ─────────────────────────────────────────────
-// GET ALL (unchanged)
+// GET ALL (PROFESSOR ONLY LOGIC)
 // ─────────────────────────────────────────────
-const getAll = async (filters = {}) => {
+const getAll = async (filters = {}, userId, role) => {
   const where = {};
 
   if (filters.title) {
@@ -22,28 +23,43 @@ const getAll = async (filters = {}) => {
     where.course_id = filters.course_id;
   }
 
+  if (filters.section_id) {
+    where.section_id = filters.section_id;
+  }
+
   if (filters.due_from || filters.due_to) {
     where.deadline = {};
     if (filters.due_from) where.deadline[Op.gte] = new Date(filters.due_from);
     if (filters.due_to) where.deadline[Op.lte] = new Date(filters.due_to);
   }
 
+  // 🔥 IMPORTANT: professor sees ONLY his assignments
+  if (role === 'professor') {
+    where.created_by = userId;
+  }
+
   return Assignment.findAll({
     where,
-    include: [{ model: Course, as: 'course' }],
+    include: [
+      { model: Course, as: 'course' },
+      {
+        model: CourseSection,
+        as: 'section',
+        required: false
+      }
+    ],
     order: [['created_at', 'DESC']]
   });
 };
 
 // ─────────────────────────────────────────────
-// FIXED STATS (CORRECT VERSION)
+// STATS (safe + section compatible)
 // ─────────────────────────────────────────────
 const getStats = async (userId, role) => {
   const now = new Date();
 
   let assignments = [];
 
-  // ───────── professor
   if (role === 'professor') {
     assignments = await Assignment.findAll({
       where: { created_by: userId },
@@ -51,7 +67,6 @@ const getStats = async (userId, role) => {
     });
   }
 
-  // ───────── student
   else if (role === 'student') {
     const enrollments = await Enrollment.findAll({
       where: { user_id: userId },
@@ -66,7 +81,6 @@ const getStats = async (userId, role) => {
     });
   }
 
-  // ───────── admin
   else {
     assignments = await Assignment.findAll({
       attributes: ['id', 'deadline']
@@ -75,7 +89,6 @@ const getStats = async (userId, role) => {
 
   const assignmentIds = assignments.map(a => a.id);
 
-  // ✅ FIX 1: unique submissions per assignment (not total rows only)
   const submittedCount = await Submission.count({
     distinct: true,
     col: 'assignment_id',
@@ -84,21 +97,15 @@ const getStats = async (userId, role) => {
     }
   });
 
-  // ✅ FIX 2: overdue only counts assignments past deadline
   const overdueCount = assignments.filter(
     a => a.deadline && new Date(a.deadline) < now
   ).length;
 
-  const total = assignments.length;
-
-  // ✅ FIX 3: correct pending logic
-  const pending = Math.max(total - submittedCount, 0);
-
   return {
-    total,
+    total: assignments.length,
     submitted: submittedCount,
     overdue: overdueCount,
-    pending
+    pending: Math.max(assignments.length - submittedCount, 0)
   };
 };
 

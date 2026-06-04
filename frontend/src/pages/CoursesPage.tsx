@@ -1,28 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchCourses, fetchCategories, getThumbnailUrl, Course, Category } from '../api/courseApi';
+import {
+  fetchCourses,
+  fetchCategories,
+  getThumbnailUrl,
+  Course,
+  Category
+} from '../api/courseApi';
 import { fetchMyEnrollments, enrollInCourse } from '../api/enrollmentApi';
-import { useAuth } from '../context/AuthContext'; 
+import { useAuth } from '../context/AuthContext';
 
 export default function CoursesPage() {
   const { user } = useAuth();
 
-  const [courses, setCourses]               = useState<Course[]>([]);
-  const [categories, setCategories]         = useState<Category[]>([]);
-  const [enrolledIds, setEnrolledIds]       = useState<Set<number>>(new Set());
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [search, setSearch]                 = useState('');
-  const [loading, setLoading]               = useState(true);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchCourses(), fetchCategories(), fetchMyEnrollments()]).then(
-      ([c, cats, enrollments]) => {
-        setCourses(c);
-        setCategories(cats);
-        setEnrolledIds(new Set(enrollments.map((e) => e.course_id)));
-        setLoading(false);
-      }
-    );
+    Promise.all([
+      fetchCourses(),
+      fetchCategories(),
+      fetchMyEnrollments()
+    ]).then(([c, cats, enrollments]) => {
+      setCourses(c);
+      setCategories(cats);
+      setEnrolledIds(new Set(enrollments.map((e) => e.course_id)));
+      setLoading(false);
+    });
   }, []);
 
   const handleEnroll = async (courseId: number) => {
@@ -35,35 +43,60 @@ export default function CoursesPage() {
   };
 
   const filtered = courses.filter((c) => {
-    const matchesCat    = activeCategory === null || c.category_id === activeCategory;
-    const matchesSearch = !search.trim()
-      || c.title.toLowerCase().includes(search.toLowerCase())
-      || (c.description || '').toLowerCase().includes(search.toLowerCase());
+    const matchesCat =
+      activeCategory === null || c.category_id === activeCategory;
+
+    const matchesSearch =
+      !search.trim() ||
+      c.title.toLowerCase().includes(search.toLowerCase()) ||
+      (c.description || '').toLowerCase().includes(search.toLowerCase());
+
     return matchesCat && matchesSearch;
   });
 
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-black dark:text-white">Courses</h1>
-        <p className="mt-1 text-gray-500">Browse all available courses</p>
+        <h1 className="text-3xl font-bold text-black dark:text-white">
+          Courses
+        </h1>
+        <p className="mt-1 text-gray-500">
+          Browse all available courses
+        </p>
       </div>
 
       {/* Search + category filter */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
         <input
-          type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search courses..."
           className="flex-1 rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-black dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-primary"
         />
+
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActiveCategory(null)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${activeCategory === null ? 'bg-primary text-white' : 'border border-stroke text-gray-600 hover:border-primary hover:text-primary dark:border-strokedark dark:text-gray-300'}`}>
+          <button
+            onClick={() => setActiveCategory(null)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+              activeCategory === null
+                ? 'bg-primary text-white'
+                : 'border border-stroke text-gray-600 hover:border-primary hover:text-primary dark:border-strokedark dark:text-gray-300'
+            }`}
+          >
             All
           </button>
+
           {categories.map((cat) => (
-            <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${activeCategory === cat.id ? 'bg-primary text-white' : 'border border-stroke text-gray-600 hover:border-primary hover:text-primary dark:border-strokedark dark:text-gray-300'}`}>
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                activeCategory === cat.id
+                  ? 'bg-primary text-white'
+                  : 'border border-stroke text-gray-600 hover:border-primary hover:text-primary dark:border-strokedark dark:text-gray-300'
+              }`}
+            >
               {cat.name}
             </button>
           ))}
@@ -71,7 +104,9 @@ export default function CoursesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">Loading courses...</div>
+        <div className="flex items-center justify-center py-20 text-gray-400">
+          Loading courses...
+        </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
           <span className="text-5xl">📚</span>
@@ -111,15 +146,20 @@ function CourseCard({
   const navigate = useNavigate();
   const [enrolling, setEnrolling] = useState(false);
 
-  const isAdmin             = userRole === 'admin';
-  const isProfessor         = userRole === 'professor';
-  const isAssignedProfessor = isProfessor && course.professor_id === userId;
+  const isAdmin = userRole === 'admin';
+  const isProfessor = userRole === 'professor';
+  const isAssignedProfessor =
+    isProfessor && course.professor_id === userId;
 
   const gradients = [
-    'from-blue-500 to-indigo-600', 'from-violet-500 to-purple-700',
-    'from-emerald-400 to-teal-600', 'from-orange-400 to-red-500',
-    'from-pink-500 to-rose-600',    'from-amber-400 to-orange-500',
+    'from-blue-500 to-indigo-600',
+    'from-violet-500 to-purple-700',
+    'from-emerald-400 to-teal-600',
+    'from-orange-400 to-red-500',
+    'from-pink-500 to-rose-600',
+    'from-amber-400 to-orange-500',
   ];
+
   const gradient = gradients[course.id % gradients.length];
   const thumbUrl = getThumbnailUrl(course.thumbnail?.file_path);
 
@@ -131,10 +171,15 @@ function CourseCard({
 
   return (
     <div className="group rounded-2xl border border-stroke bg-white dark:border-strokedark dark:bg-boxdark overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col">
+      
       {/* Thumbnail */}
       <div className={`h-40 w-full overflow-hidden ${!thumbUrl ? `bg-gradient-to-br ${gradient}` : ''} flex items-center justify-center shrink-0`}>
         {thumbUrl ? (
-          <img src={thumbUrl} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+          <img
+            src={thumbUrl}
+            alt={course.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
         ) : (
           <span className="text-4xl text-white/80 select-none">📖</span>
         )}
@@ -146,66 +191,100 @@ function CourseCard({
             {course.category.name}
           </span>
         )}
+
         <h3 className="mt-1 text-base font-bold text-black dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
           {course.title}
         </h3>
 
         {course.professor && (
-  <p className="mt-1 text-sm font-medium text-blue-800 dark:text-blue-400">
-  Professor: {course.professor.first_name} {course.professor.last_name}
-</p>
-)}
-
-        {course.description && (
-          <p className="mt-2 text-sm text-gray-500 line-clamp-2 flex-1">{course.description}</p>
+          <p className="mt-1 text-sm font-medium text-blue-800 dark:text-blue-400">
+            Professor: {course.professor.first_name} {course.professor.last_name}
+          </p>
         )}
 
-        {/* Action row */}
+        {course.description && (
+          <p className="mt-2 text-sm text-gray-500 line-clamp-2 flex-1">
+            {course.description}
+          </p>
+        )}
+
+        {/* ACTIONS */}
         <div className="mt-4 flex items-center justify-between pt-3 border-t border-stroke dark:border-strokedark gap-2">
           <span className="text-xs text-gray-400">
             {new Date(course.created_at).toLocaleDateString()}
           </span>
 
-          {/* Admin → always view */}
+          {/* ADMIN */}
           {isAdmin && (
-            <button type="button" onClick={() => navigate(`/courses/${course.id}`)}
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:gap-2 transition-all">
-              View Course
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/courses/${course.id}`)}
+                className="text-sm font-medium text-primary"
+              >
+                View Course
+              </button>
+
+              {/* 🔥 NEW: Assignments entry */}
+              <button
+                type="button"
+                onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
+                className="text-sm font-medium text-indigo-600"
+              >
+                Assignments
+              </button>
+            </div>
           )}
 
-          {/* Assigned professor → view their course */}
+          {/* PROFESSOR */}
           {isAssignedProfessor && (
-            <button type="button" onClick={() => navigate(`/courses/${course.id}`)}
-              className="inline-flex items-center gap-1 text-sm font-medium text-violet-600 hover:gap-2 transition-all">
-              My Course
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate(`/courses/${course.id}`)}
+                className="text-sm font-medium text-violet-600"
+              >
+                My Course
+              </button>
+
+              <button
+                onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
+                className="text-sm font-medium text-indigo-600"
+              >
+                Assignments
+              </button>
+            </div>
           )}
 
-          {/* Non-assigned professor → no button */}
           {isProfessor && !isAssignedProfessor && (
-            <span className="text-xs text-gray-400 italic">Not assigned</span>
+            <span className="text-xs text-gray-400 italic">
+              Not assigned
+            </span>
           )}
 
-          {/* Student: enrolled → go to course, not enrolled → enroll button */}
+          {/* STUDENT */}
           {!isAdmin && !isProfessor && (
             isEnrolled ? (
-              <button type="button" onClick={() => navigate(`/courses/${course.id}`)}
-                className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:gap-2 transition-all">
-                ✓ Go to Course
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/courses/${course.id}`)}
+                  className="text-sm font-medium text-emerald-600"
+                >
+                  Go to Course
+                </button>
+
+                <button
+                  onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
+                  className="text-sm font-medium text-indigo-600"
+                >
+                  Assignments
+                </button>
+              </div>
             ) : (
-              <button type="button" disabled={enrolling} onClick={handleEnrollClick}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60 shadow-sm">
+              <button
+                disabled={enrolling}
+                onClick={handleEnrollClick}
+                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white"
+              >
                 {enrolling ? 'Enrolling...' : 'Enroll'}
               </button>
             )

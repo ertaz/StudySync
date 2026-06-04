@@ -27,3 +27,28 @@ export const uploadLessonFile = (formData: FormData) =>
   api.post(`/course-content/lessons`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   }).then(r => r.data);
+
+
+
+// GET assignments by course
+// ASSIGNMENTS API
+
+export const fetchAssignments = async (sectionId: number) => {
+  const res = await api.get(`/course-content/sections/${sectionId}/assignments`);
+  return res.data;
+};
+
+export const createAssignment = async (data: any) => {
+  const res = await api.post(`/course-content/assignments`, data);
+  return res.data;
+};
+
+export const updateAssignment = async (id: number, data: any) => {
+  const res = await api.put(`/course-content/assignments/${id}`, data);
+  return res.data;
+};
+
+export const deleteAssignment = async (id: number) => {
+  const res = await api.delete(`/course-content/assignments/${id}`);
+  return res.data;
+};

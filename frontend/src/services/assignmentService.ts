@@ -1,5 +1,9 @@
 import api from "../api/axiosInstance";
 
+/* ─────────────────────────────
+   TYPES
+──────────────────────────── */
+
 export interface AssignmentAttachment {
   id: number;
   filename: string;
@@ -9,11 +13,17 @@ export interface AssignmentAttachment {
 
 export interface Assignment {
   id: number;
+
   course_id: number;
+  section_id?: number;
+
   title: string;
   description: string;
+
+  // 🔥 KEEP THIS EXACT (backend e kthen string date)
   deadline: string;
-  max_grade: string;
+
+  max_grade: number; // (më mirë number, jo string)
 
   created_at: string;
   updated_at: string;
@@ -23,9 +33,13 @@ export interface Assignment {
     title: string;
   };
 
+  section?: {
+    id: number;
+    title: string; // ⚠️ jo "name"
+  };
+
   attachments?: AssignmentAttachment[];
 }
-
 export interface AssignmentStats {
   total: number;
   submitted: number;
@@ -33,19 +47,44 @@ export interface AssignmentStats {
   pending: number;
 }
 
-// GET /assignments
-export const getAssignments = async () => {
-  const res = await api.get("/assignments");
+/* ─────────────────────────────
+   GET ALL (LEGACY + NEW FILTERS)
+──────────────────────────── */
+
+/**
+ * Supports:
+ * - old: getAssignments()
+ * - new: getAssignments({ course_id, section_id })
+ */
+export const getAssignments = async (filters?: {
+  course_id?: number | string;
+  section_id?: number | string;
+}) => {
+  const res = await api.get("/assignments", {
+    params: filters,
+  });
+
   return res.data.data;
 };
 
-// GET /assignments/:id
+/* ─────────────────────────────
+   GET BY ID
+──────────────────────────── */
+
 export const getAssignmentById = async (id: string | number) => {
   const res = await api.get(`/assignments/${id}`);
   return res.data.data;
 };
 
-// POST /assignments
+/* ─────────────────────────────
+   CREATE
+   (NOW SECTION-AWARE)
+──────────────────────────── */
+
+/**
+ * REQUIRED now:
+ * - section_id must exist (from UI context)
+ */
 export const createAssignment = async (formData: FormData) => {
   const res = await api.post("/assignments", formData, {
     headers: {
@@ -56,7 +95,10 @@ export const createAssignment = async (formData: FormData) => {
   return res.data;
 };
 
-// PUT /assignments/:id
+/* ─────────────────────────────
+   UPDATE
+──────────────────────────── */
+
 export const updateAssignment = async (
   id: string | number,
   formData: FormData
@@ -70,13 +112,19 @@ export const updateAssignment = async (
   return res.data;
 };
 
-// DELETE /assignments/:id
+/* ─────────────────────────────
+   DELETE
+──────────────────────────── */
+
 export const deleteAssignment = async (id: number) => {
   const res = await api.delete(`/assignments/${id}`);
   return res.data;
 };
 
-// DELETE attachment
+/* ─────────────────────────────
+   ATTACHMENTS
+──────────────────────────── */
+
 export const deleteAttachment = async (
   assignmentId: number,
   fileId: number
@@ -88,13 +136,19 @@ export const deleteAttachment = async (
   return res.data;
 };
 
-// GET stats
+/* ─────────────────────────────
+   STATS
+──────────────────────────── */
+
 export const getAssignmentStats = async (): Promise<AssignmentStats> => {
   const res = await api.get("/assignments/stats");
   return res.data.data;
 };
 
-// EXPORT
+/* ─────────────────────────────
+   EXPORT / IMPORT (UNCHANGED)
+──────────────────────────── */
+
 export const exportAssignments = async (
   format: "csv" | "excel" | "json"
 ) => {
@@ -108,13 +162,12 @@ export const exportAssignments = async (
   return res.data;
 };
 
-// IMPORT
 export const importAssignments = async (file: FormData) => {
-    const res = await api.post("/assignments/import", file, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  
-    return res.data;
-  };
+  const res = await api.post("/assignments/import", file, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data;
+};
