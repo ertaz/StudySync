@@ -1,16 +1,23 @@
-// src/pages/admin/AdminCoursesPage.tsx
+// src/pages/Admin/AdminCoursesPage.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ImportExportBar from '../../components/admin/ImportExportBar';
 import {
   fetchCourses, fetchCategories, createCategory, deleteCourse,
   getThumbnailUrl, Course, Category,
 } from '../../api/courseApi';
+import {
+  exportCoursesData,
+  importCoursesData,
+  exportCategoriesData,
+  importCategoriesData,
+} from '../../api/reportApi';
 
 export default function AdminCoursesPage() {
   const navigate = useNavigate();
 
   const [courses, setCourses]       = useState<Course[]>([]);
-  const [, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState('');
 
@@ -20,6 +27,9 @@ export default function AdminCoursesPage() {
   const [newCatDesc, setNewCatDesc]     = useState('');
   const [catLoading, setCatLoading]     = useState(false);
   const [catError, setCatError]         = useState('');
+
+  // Delete category confirm
+  const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true); setLoadError('');
@@ -48,20 +58,29 @@ export default function AdminCoursesPage() {
     } finally { setCatLoading(false); }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeleteCourse = async (id: number) => {
     if (!confirm('Delete this course? This cannot be undone.')) return;
     await deleteCourse(id);
-    setCourses((prev) => prev.filter((c) => c.id !== id));
+    setCourses(prev => prev.filter(c => c.id !== id));
   };
 
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6">
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-black dark:text-white">Courses</h1>
-          <p className="text-sm text-gray-500">Manage all platform courses</p>
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/admin')}
+          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 transition"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-black dark:text-white">Course Management</h1>
+          <p className="text-sm text-gray-500">Manage courses and categories</p>
         </div>
         <button
           type="button"
@@ -72,7 +91,6 @@ export default function AdminCoursesPage() {
         </button>
       </div>
 
-      {/* Error banner */}
       {loadError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
           ⚠️ {loadError}
@@ -80,8 +98,16 @@ export default function AdminCoursesPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden">
+      {/* ── Courses import/export ── */}
+      <ImportExportBar
+        label="Courses"
+        onExport={exportCoursesData}
+        onImport={importCoursesData}
+        onImportSuccess={load}
+      />
+
+      {/* Courses table */}
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden mb-10">
         {loading ? (
           <div className="flex items-center justify-center gap-3 py-16 text-gray-400">
             <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -103,76 +129,61 @@ export default function AdminCoursesPage() {
                 <th className="px-6 py-4">Thumbnail</th>
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Professor</th>
                 <th className="px-6 py-4">Created</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stroke dark:divide-strokedark">
-              {courses.map((course) => {
+              {courses.map(course => {
                 const thumbUrl = getThumbnailUrl(course.thumbnail?.file_path);
                 return (
                   <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
-                    {/* Thumbnail */}
                     <td className="px-6 py-4">
                       {thumbUrl ? (
-                        <img
-                          src={thumbUrl}
-                          alt={course.title}
-                          className="h-12 w-20 rounded-lg object-cover border border-stroke"
-                        />
+                        <img src={thumbUrl} alt={course.title} className="h-12 w-20 rounded-lg object-cover border border-stroke" />
                       ) : (
-                        <div className="h-12 w-20 rounded-lg bg-gray-100 dark:bg-meta-4 flex items-center justify-center text-gray-400 text-lg">
-                          📖
-                        </div>
+                        <div className="h-12 w-20 rounded-lg bg-gray-100 dark:bg-meta-4 flex items-center justify-center text-gray-400 text-lg">📖</div>
                       )}
                     </td>
-
-                    {/* Title + description */}
                     <td className="px-6 py-4">
                       <div className="font-medium text-black dark:text-white">{course.title}</div>
                       {course.description && (
                         <div className="text-xs text-gray-400 truncate max-w-xs">{course.description}</div>
                       )}
                     </td>
-
-                    {/* Category badge */}
                     <td className="px-6 py-4">
                       {course.category ? (
                         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                           {course.category.name}
                         </span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">—</span>
-                      )}
+                      ) : <span className="text-gray-400 text-xs">—</span>}
                     </td>
-
-                    {/* Date */}
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {course.professor
+                        ? `${course.professor.first_name} ${course.professor.last_name}`
+                        : '—'}
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {new Date(course.created_at).toLocaleDateString()}
                     </td>
-
-                    {/* Actions — Edit + Delete */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          type="button"
                           onClick={() => navigate(`/admin/courses/edit/${course.id}`)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
                         >
-                          {/* Pencil icon */}
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                           </svg>
                           Edit
                         </button>
                         <button
-                          type="button"
-                          onClick={() => handleDelete(course.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white"
+                          onClick={() => handleDeleteCourse(course.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
                         >
-                          {/* Trash icon */}
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                             <path d="M10 11v6M14 11v6"/>
@@ -190,7 +201,67 @@ export default function AdminCoursesPage() {
         )}
       </div>
 
-      {/* ── Create Category Modal ── */}
+      {/* ═══════════════════════════════════════════
+          CATEGORIES SECTION (below courses)
+      ══════════════════════════════════════════ */}
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-black dark:text-white">Categories</h2>
+          <p className="text-sm text-gray-500">Manage course categories</p>
+        </div>
+        <button
+          onClick={() => setShowCatModal(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-blue-600 px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-600 hover:text-white transition"
+        >
+          + New Category
+        </button>
+      </div>
+
+      {/* Categories import/export */}
+      <ImportExportBar
+        label="Categories"
+        onExport={exportCategoriesData}
+        onImport={importCategoriesData}
+        onImportSuccess={load}
+      />
+
+      {/* Categories table */}
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden">
+        {categories.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
+            <span className="text-4xl">🏷️</span>
+            <p className="text-sm font-medium text-gray-500">No categories yet</p>
+          </div>
+        ) : (
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-meta-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Description</th>
+                <th className="px-6 py-4">Courses</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stroke dark:divide-strokedark">
+              {categories.map(cat => {
+                const courseCount = courses.filter(c => c.category_id === cat.id).length;
+                return (
+                  <tr key={cat.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
+                    <td className="px-6 py-4">
+                      <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                        {cat.name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{cat.description || '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{courseCount} course(s)</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Create Category Modal */}
       {showCatModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-boxdark shadow-2xl flex flex-col max-h-[90vh]">
@@ -205,31 +276,25 @@ export default function AdminCoursesPage() {
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
                     Name <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                  <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)}
                     placeholder="e.g. Programming"
-                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-primary"
-                  />
+                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-primary" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">Description</label>
-                  <input
-                    type="text" value={newCatDesc} onChange={(e) => setNewCatDesc(e.target.value)}
+                  <input type="text" value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)}
                     placeholder="Optional description"
-                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-primary"
-                  />
+                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-primary" />
                 </div>
                 {catError && (
-                  <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                    {catError}
-                  </p>
+                  <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{catError}</p>
                 )}
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); }}
                     className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition">
                     Cancel
                   </button>
-                  <button type="submit" onClick={handleCreateCategory} disabled={catLoading}
+                  <button type="submit" disabled={catLoading}
                     className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60">
                     {catLoading ? 'Saving...' : 'Create Category'}
                   </button>

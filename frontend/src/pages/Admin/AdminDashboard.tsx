@@ -1,242 +1,198 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+// src/pages/Admin/AdminDashboard.tsx
+// Professors management — list + create + edit + delete + import/export
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateProfessorForm from '../../components/admin/CreateProfessorForm';
-import EditProfessorModal from '../../components/admin/EditProfessorModal';
-import { getAllProfessorsAPI, deleteProfessorAPI } from '../../api/adminAPI';
+import EditProfessorModal  from '../../components/admin/EditProfessorModal';
+import ImportExportBar     from '../../components/admin/ImportExportBar';
+import {
+  getAllProfessorsAPI,
+  deleteProfessorAPI,
+} from '../../api/adminAPI';
+import {
+  exportProfessorsData,
+  importProfessorsData,
+} from '../../api/reportApi';
 
 interface Professor {
-  id:         number;
-  first_name: string;
-  last_name:  string;
-  email:      string;
-  professorProfile?: {
-    title:               string;
-    department:          string;
-    years_of_experience: number;
-    phone_number:        string;
-  };
+  id:                  number;
+  first_name:          string;
+  last_name:           string;
+  email:               string;
+  title?:              string;
+  department?:         string;
+  years_of_experience?: number;
+  phone_number?:       string;
 }
 
 export default function AdminDashboard() {
-  const { user }   = useAuth();
-  const navigate   = useNavigate();
+  const navigate = useNavigate();
 
-  const [showForm,         setShowForm]         = useState(false);
-  const [professors,       setProfessors]       = useState<Professor[]>([]);
-  const [loadingList,      setLoadingList]      = useState(true);
-  const [editingProfessor, setEditingProfessor] = useState<Professor | null>(null);
-  const [deletingId,       setDeletingId]       = useState<number | null>(null);
+  const [professors, setProfessors] = useState<Professor[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [loadError, setLoadError]   = useState('');
 
-  // Redirect non-admins away immediately
-  useEffect(() => {
-    if (user && user.role !== 'admin') {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
+  const [showCreate, setShowCreate]           = useState(false);
+  const [editProf, setEditProf]               = useState<Professor | null>(null);
 
-  // Load professors list
-  const fetchProfessors = async () => {
+  const load = async () => {
+    setLoading(true); setLoadError('');
     try {
-      setLoadingList(true);
       const data = await getAllProfessorsAPI();
       setProfessors(data.professors || []);
-    } catch {
-      setProfessors([]);
-    } finally {
-      setLoadingList(false);
-    }
+    } catch (err: any) {
+      setLoadError(err?.response?.data?.message || 'Failed to load professors.');
+    } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchProfessors();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    fetchProfessors();
-  };
-
-  const handleEditSuccess = () => {
-    setEditingProfessor(null);
-    fetchProfessors();
-  };
-
-  const handleDelete = async (prof: Professor) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to deactivate ${prof.first_name} ${prof.last_name}?\n\nThey will no longer be able to log in.`
-    );
-    if (!confirmed) return;
-
-    setDeletingId(prof.id);
+  const handleDelete = async (id: number) => {
+    if (!confirm('Delete this professor? This cannot be undone.')) return;
     try {
-      await deleteProfessorAPI(prof.id);
-      fetchProfessors();
-    } catch {
-      alert('Failed to deactivate professor. Please try again.');
-    } finally {
-      setDeletingId(null);
+      await deleteProfessorAPI(id);
+      setProfessors(prev => prev.filter(p => p.id !== id));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to delete professor.');
     }
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="mx-auto max-w-screen-xl p-4 md:p-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white/90">
-            Admin Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Welcome, {user?.first_name}. Manage professors from here.
-          </p>
+      <div className="mb-6 flex items-center gap-4">
+        <button
+          type="button"
+          onClick={() => navigate('/admin')}
+          className="flex items-center justify-center w-9 h-9 rounded-lg border border-stroke bg-white text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 transition"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-black dark:text-white">Professor Management</h1>
+          <p className="text-sm text-gray-500">Create, edit and manage professor accounts</p>
         </div>
-
-        {!showForm && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-lg bg-brand-500 hover:bg-brand-600 shadow-theme-xs transition"
-          >
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Create Professor
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowCreate(v => !v)}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition"
+        >
+          {showCreate ? '✕ Cancel' : '+ New Professor'}
+        </button>
       </div>
 
-      {/* Create Professor Form */}
-      {showForm && (
-        <CreateProfessorForm
-          onSuccess={handleFormSuccess}
-          onCancel={() => setShowForm(false)}
-        />
+      {/* Create form */}
+      {showCreate && (
+        <div className="mb-6">
+          <CreateProfessorForm
+            onSuccess={() => { setShowCreate(false); load(); }}
+            onCancel={() => setShowCreate(false)}
+          />
+        </div>
       )}
 
-      {/* Professors List */}
-      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-white/90">
-            Professors ({professors.length})
-          </h2>
-        </div>
+      {/* Import / Export bar */}
+      <ImportExportBar
+        label="Professors"
+        onExport={exportProfessorsData}
+        onImport={importProfessorsData}
+        onImportSuccess={load}
+      />
 
-        {loadingList ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400">
+      {/* Error */}
+      {loadError && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          ⚠️ {loadError}
+          <button onClick={load} className="ml-3 underline hover:no-underline">Retry</button>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center gap-3 py-16 text-gray-400">
+            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
             Loading professors...
           </div>
         ) : professors.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400">
-            No professors yet. Click "Create Professor" to add one.
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+            <span className="text-5xl">👨‍🏫</span>
+            <p className="text-base font-medium text-gray-500">No professors yet</p>
+            <p className="text-sm">Click <strong>+ New Professor</strong> or import a file above</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Department</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Experience</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-meta-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
+                <th className="px-6 py-4">Name</th>
+                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Title</th>
+                <th className="px-6 py-4">Department</th>
+                <th className="px-6 py-4">Exp.</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stroke dark:divide-strokedark">
+              {professors.map(p => (
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-black dark:text-white">
+                      {p.first_name} {p.last_name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{p.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{p.title || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{p.department || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {p.years_of_experience != null ? `${p.years_of_experience} yr` : '—'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setEditProf(p)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(p.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition dark:border-red-800 dark:bg-red-900/20 dark:text-red-400"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                          <path d="M10 11v6M14 11v6"/>
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {professors.map(prof => (
-                  <tr key={prof.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                    <td className="px-6 py-4 font-medium text-gray-800 dark:text-white/90">
-                      {prof.first_name} {prof.last_name}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {prof.email}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {prof.professorProfile?.title || '—'}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {prof.professorProfile?.department || '—'}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {prof.professorProfile?.years_of_experience ?? '—'} yrs
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-
-                        {/* Edit button */}
-                        <button
-                          onClick={() => setEditingProfessor(prof)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                                     text-brand-600 border border-brand-200 rounded-lg
-                                     hover:bg-brand-50 dark:text-brand-400 dark:border-brand-800
-                                     dark:hover:bg-brand-900/20 transition"
-                        >
-                          <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round"
-                              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652
-                                 L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685
-                                 a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                          </svg>
-                          Edit
-                        </button>
-
-                        {/* Delete button */}
-                        <button
-                          onClick={() => handleDelete(prof)}
-                          disabled={deletingId === prof.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium
-                                     text-red-600 border border-red-200 rounded-lg
-                                     hover:bg-red-50 dark:text-red-400 dark:border-red-800
-                                     dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed
-                                     transition"
-                        >
-                          {deletingId === prof.id ? (
-                            <>
-                              <svg className="size-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                              </svg>
-                              Removing…
-                            </>
-                          ) : (
-                            <>
-                              <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round"
-                                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21
-                                     c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673
-                                     a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077
-                                     L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397
-                                     m-12 .562c.34-.059.68-.114 1.022-.165
-                                     m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916
-                                     c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0
-                                     c-1.18.037-2.09 1.022-2.09 2.201v.916
-                                     m7.5 0a48.667 48.667 0 00-7.5 0" />
-                              </svg>
-                              Delete
-                            </>
-                          )}
-                        </button>
-
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Edit Professor Modal */}
-      {editingProfessor && (
+      {/* Edit modal */}
+      {editProf && (
         <EditProfessorModal
-          professor={editingProfessor}
-          onSuccess={handleEditSuccess}
-          onCancel={() => setEditingProfessor(null)}
+          professor={editProf}
+          onClose={() => setEditProf(null)}
+          onSuccess={() => { setEditProf(null); load(); }}
         />
       )}
-
     </div>
   );
 }
