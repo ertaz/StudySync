@@ -171,7 +171,7 @@ function CourseCard({
 
   return (
     <div className="group rounded-2xl border border-stroke bg-white dark:border-strokedark dark:bg-boxdark overflow-hidden shadow-sm hover:shadow-lg transition-shadow flex flex-col">
-      
+
       {/* Thumbnail */}
       <div className={`h-40 w-full overflow-hidden ${!thumbUrl ? `bg-gradient-to-br ${gradient}` : ''} flex items-center justify-center shrink-0`}>
         {thumbUrl ? (
@@ -216,7 +216,7 @@ function CourseCard({
 
           {/* ADMIN */}
           {isAdmin && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <button
                 type="button"
                 onClick={() => navigate(`/courses/${course.id}`)}
@@ -225,7 +225,6 @@ function CourseCard({
                 View Course
               </button>
 
-              {/* 🔥 NEW: Assignments entry */}
               <button
                 type="button"
                 onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
@@ -233,12 +232,20 @@ function CourseCard({
               >
                 Assignments
               </button>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/courses/${course.id}/announcements`)}
+                className="text-sm font-medium text-orange-500"
+              >
+                Announcements
+              </button>
             </div>
           )}
 
           {/* PROFESSOR */}
           {isAssignedProfessor && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <button
                 onClick={() => navigate(`/courses/${course.id}`)}
                 className="text-sm font-medium text-violet-600"
@@ -252,6 +259,13 @@ function CourseCard({
               >
                 Assignments
               </button>
+
+              <button
+                onClick={() => navigate(`/courses/${course.id}/announcements`)}
+                className="text-sm font-medium text-orange-500"
+              >
+                Announcements
+              </button>
             </div>
           )}
 
@@ -264,7 +278,7 @@ function CourseCard({
           {/* STUDENT */}
           {!isAdmin && !isProfessor && (
             isEnrolled ? (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-end">
                 <button
                   onClick={() => navigate(`/courses/${course.id}`)}
                   className="text-sm font-medium text-emerald-600"
@@ -277,6 +291,13 @@ function CourseCard({
                   className="text-sm font-medium text-indigo-600"
                 >
                   Assignments
+                </button>
+
+                <button
+                  onClick={() => navigate(`/courses/${course.id}/announcements`)}
+                  className="text-sm font-medium text-orange-500"
+                >
+                  Announcements
                 </button>
               </div>
             ) : (

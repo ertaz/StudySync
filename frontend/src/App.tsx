@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import SignIn        from "./pages/AuthPages/SignIn";
 import SignUp        from "./pages/AuthPages/SignUp";
@@ -27,6 +27,8 @@ import CourseDetailPage from "./pages/CourseDetailPage";
 import AdminCoursesPage from "./pages/Admin/AdminCoursesPage";
 import CreateCoursePage from "./pages/Admin/CreateCoursePage";
 import AdminPanel    from "./pages/Admin/AdminPanel";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
+import CreateAnnouncementPage from "./pages/CreateAnnouncementsPage";
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -88,6 +90,8 @@ const AppRoutes = () => {
       </Route>
       <Route path="/admin/courses/create"   element={<CreateCoursePage />} />
       <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
+      <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
+      <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
