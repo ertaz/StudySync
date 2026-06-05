@@ -14,6 +14,7 @@ const courseContentRoutes   = require('./routes/courseContentRoutes');
 const assignmentRoutes      = require('./routes/assignmentRoutes');
 const submissionRoutes      = require('./routes/submissionRoutes');
 const assignmentReportRoutes = require('./routes/assignmentReportRoutes');
+const announcementRoutes    = require('./routes/announcementRoutes');
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 const studentRoutes    = require('./routes/studentRoutes');
@@ -50,6 +51,7 @@ app.use('/api/course-content',         courseContentRoutes);
 app.use('/api/assignments/reports',    assignmentReportRoutes); // must come before /api/assignments
 app.use('/api/assignments',            assignmentRoutes);
 app.use('/api/submissions',            submissionRoutes);
+app.use('/api/announcements',          announcementRoutes);
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 app.use('/api/students',               studentRoutes);    // export/import students

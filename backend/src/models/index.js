@@ -15,7 +15,8 @@ const Category         = require('./sql/Category');
 const Enrollment       = require('./sql/Enrollment');
 const Assignment       = require('./sql/Assignment');
 const Submission       = require('./sql/Submission');
-const SubmissionFile   = require('./sql/SubmissionFile');   // ← SHTUAR
+const SubmissionFile   = require('./sql/SubmissionFile');   
+const Announcement     = require('./sql/Announcement'); 
 
 require('./sql/associations');
 
@@ -38,7 +39,8 @@ const db = {
   Enrollment,
   Assignment,
   Submission,
-  SubmissionFile,   // ← SHTUAR
+  SubmissionFile, 
+  Announcement,
 };
 
 module.exports = db;
