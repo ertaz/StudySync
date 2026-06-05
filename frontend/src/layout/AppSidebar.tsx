@@ -1,4 +1,3 @@
-// src/layout/AppSidebar.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
 
@@ -40,8 +39,7 @@ const navItems: NavItem[] = [
     name: "Assignments",
     subItems: [
       { name: "All Assignments",  path: "/assignments" },
-      { name: "Statistics",       path: "/stats" },
-      { name: "Import / Export",  path: "/data-tools" },
+      
       { name: "Dynamic Report",   path: "/dynamic-report" },  // ← NEW
     ],
   },
@@ -199,25 +197,32 @@ const AppSidebar: React.FC = () => {
               className="overflow-hidden transition-all duration-300"
             >
               <ul className="ml-9 mt-2 space-y-1">
-                {item.subItems.map(sub => (
-                  <li key={sub.name}>
-                    <Link
-                      to={sub.path}
-                      className={`menu-dropdown-item ${
-                        isActive(sub.path)
-                          ? "menu-dropdown-item-active"
-                          : "menu-dropdown-item-inactive"
-                      }`}
-                    >
-                      {sub.name}
-                      {sub.name === "Dynamic Report" && (
-                        <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wide">
-                          New
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
+                {item.subItems.map(sub => {
+                  // MOS I SHFAQ STUDENTIT DINAMIC REPORT NE SIDEBAR
+                  if (sub.name === "Dynamic Report" && user?.role === "student") {
+                    return null;
+                  }
+
+                  return (
+                    <li key={sub.name}>
+                      <Link
+                        to={sub.path}
+                        className={`menu-dropdown-item ${
+                          isActive(sub.path)
+                            ? "menu-dropdown-item-active"
+                            : "menu-dropdown-item-inactive"
+                        }`}
+                      >
+                        {sub.name}
+                        {sub.name === "Dynamic Report" && (
+                          <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wide">
+                            New
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

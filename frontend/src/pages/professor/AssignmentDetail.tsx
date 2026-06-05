@@ -10,12 +10,17 @@ import {
   getAssignmentById,
 } from "../../services/assignmentService";
 
+import { useAuth } from "../../context/AuthContext";
+
 export default function AssignmentDetail() {
   const { id } =
     useParams();
 
   const navigate =
     useNavigate();
+
+  const { user } = useAuth();
+  const role = user?.role; // "professor" | "admin" | "student"
 
   const [assignment,
     setAssignment] =
@@ -87,16 +92,19 @@ export default function AssignmentDetail() {
             </p>
           </div>
 
-          <button
-            onClick={() =>
-              navigate(
-                `/assignments/${assignment.id}/edit`
-              )
-            }
-            className="rounded-lg bg-blue-600 px-4 py-2 text-white"
-          >
-            Edit
-          </button>
+          {/* ✅ Edit — vetëm professor */}
+          {role === "professor" && (
+            <button
+              onClick={() =>
+                navigate(
+                  `/assignments/${assignment.id}/edit`
+                )
+              }
+              className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+            >
+              Edit
+            </button>
+          )}
 
         </div>
 

@@ -24,7 +24,7 @@ const { authenticate, authorize } = require('../middlewares/authMiddleware');
 router.get(
   '/filters',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('admin'), // ✅ vetëm admin — profesori nuk e sheh listën e profesorëve të tjerë
   controller.getFilters
 );
 

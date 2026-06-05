@@ -8,6 +8,7 @@ import {
 } from "../../services/submissionService";
 
 import { useSubmissions } from "../../hooks/useSubmissions";
+import { useAuth } from "../../context/AuthContext";
 import GradeModal from "../../components/GradeModal";
 
 const BASE_URL =
@@ -16,6 +17,8 @@ const BASE_URL =
 
 export default function AssignmentSubs() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const role = user?.role; // "professor" | "admin" | "student"
 
   const {
     submissions,
@@ -225,18 +228,34 @@ export default function AssignmentSubs() {
                   {/* Actions */}
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => handleGradeClick(submission)}
-                        className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-700 hover:bg-blue-100"
-                      >
-                        Grade
-                      </button>
-                      <button
-                        onClick={() => handleDelete(submission.id)}
-                        className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 hover:bg-red-100"
-                      >
-                        Delete
-                      </button>
+
+                      {/* ✅ Grade — vetëm professor */}
+                      {role === "professor" && (
+                        <button
+                          onClick={() => handleGradeClick(submission)}
+                          className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-700 hover:bg-blue-100"
+                        >
+                          Grade
+                        </button>
+                      )}
+
+                      {/* ✅ Delete — vetëm professor */}
+                      {role === "professor" && (
+                        <button
+                          onClick={() => handleDelete(submission.id)}
+                          className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700 hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
+                      )}
+
+                      {/* ✅ Admin — view only, nuk ka butona */}
+                      {role === "admin" && (
+                        <span className="text-xs italic text-gray-400">
+                          View only
+                        </span>
+                      )}
+
                     </div>
                   </td>
 
@@ -247,14 +266,16 @@ export default function AssignmentSubs() {
         )}
       </div>
 
-      {/* GRADE MODAL */}
-      <GradeModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleGradeSave}
-        currentGrade={selectedSubmission?.grade}
-        currentFeedback={selectedSubmission?.feedback}
-      />
+      {/* GRADE MODAL — hapet vetëm për professor */}
+      {role === "professor" && (
+        <GradeModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleGradeSave}
+          currentGrade={selectedSubmission?.grade}
+          currentFeedback={selectedSubmission?.feedback}
+        />
+      )}
     </div>
   );
 }

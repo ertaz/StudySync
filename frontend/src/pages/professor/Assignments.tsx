@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAssignments } from "../../hooks/useAssignments";
+import { useAuth } from "../../context/AuthContext";
 
 import {
   deleteAssignment,
@@ -10,6 +11,8 @@ import {
 
 export default function Assignments() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const role = user?.role; // "professor" | "admin" | "student"
 
   const {
     assignments,
@@ -65,12 +68,15 @@ export default function Assignments() {
           </p>
         </div>
 
-        <button
-          onClick={() => navigate("/assignments/new")}
-          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + New Assignment
-        </button>
+        {/* ✅ Vetëm professor mund të krijojë assignment të ri */}
+        {role === "professor" && (
+          <button
+            onClick={() => navigate("/assignments/new")}
+            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + New Assignment
+          </button>
+        )}
       </div>
 
       {/* SEARCH */}
@@ -116,7 +122,6 @@ export default function Assignments() {
 
                 <th className="px-6 py-4">Deadline</th>
                 <th className="px-6 py-4">Max Grade</th>
-                <th className="px-6 py-4">Attachments</th>
 
                 <th className="px-6 py-4 text-right">
                   Actions
@@ -146,7 +151,9 @@ export default function Assignments() {
                   </td>
 
                   {/* 🔥 NEW SECTION */}
-                 
+                  <td className="px-6 py-4">
+                    {assignment.section?.title || "-"}
+                  </td>
 
                   <td className="px-6 py-4">
                     {new Date(assignment.deadline).toLocaleString()}
@@ -157,14 +164,9 @@ export default function Assignments() {
                   </td>
 
                   <td className="px-6 py-4">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-700">
-                      {assignment.attachments?.length || 0} files
-                    </span>
-                  </td>
-
-                  <td className="px-6 py-4">
                     <div className="flex justify-end gap-2">
 
+                      {/* ✅ View — të gjithë rolet */}
                       <button
                         onClick={() =>
                           navigate(`/assignments/${assignment.id}`)
@@ -174,34 +176,43 @@ export default function Assignments() {
                         View
                       </button>
 
-                      <button
-                        onClick={() =>
-                          navigate(
-                            `/assignments/${assignment.id}/submissions`
-                          )
-                        }
-                        className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-xs text-green-700"
-                      >
-                        Submissions
-                      </button>
+                      {/* ✅ Submissions — professor dhe admin */}
+                      {(role === "professor" || role === "admin") && (
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/assignments/${assignment.id}/submissions`
+                            )
+                          }
+                          className="rounded-lg border border-green-300 bg-green-50 px-3 py-2 text-xs text-green-700"
+                        >
+                          Submissions
+                        </button>
+                      )}
 
-                      <button
-                        onClick={() =>
-                          navigate(`/assignments/${assignment.id}/edit`)
-                        }
-                        className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-700"
-                      >
-                        Edit
-                      </button>
+                      {/* ✅ Edit — vetëm professor */}
+                      {role === "professor" && (
+                        <button
+                          onClick={() =>
+                            navigate(`/assignments/${assignment.id}/edit`)
+                          }
+                          className="rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-xs text-blue-700"
+                        >
+                          Edit
+                        </button>
+                      )}
 
-                      <button
-                        onClick={() =>
-                          handleDelete(assignment.id)
-                        }
-                        className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"
-                      >
-                        Delete
-                      </button>
+                      {/* ✅ Delete — vetëm professor */}
+                      {role === "professor" && (
+                        <button
+                          onClick={() =>
+                            handleDelete(assignment.id)
+                          }
+                          className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
 
                     </div>
                   </td>

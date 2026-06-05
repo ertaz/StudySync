@@ -53,7 +53,14 @@ router.post(
 
 router.put('/:id',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk modifikon submission
+  controller.update
+);
+
+// ✅ Grade submission — vetëm professor
+router.patch('/:id/grade',
+  authenticate,
+  authorize('professor'),
   controller.update
 );
 
@@ -66,6 +73,7 @@ router.delete('/files/:fileId',
 
 router.delete('/:id',
   authenticate,
+  authorize('professor'), // ✅ vetëm professor — admin nuk fshin submission
   controller.remove
 );
 

@@ -102,7 +102,7 @@ router.get(
 router.post(
   '/import',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk krijon/importon
   uploadImport.single('file'),
   importController.importAssignments
 );
@@ -186,7 +186,7 @@ router.get('/:id', authenticate, controller.getOne);
 router.post(
   '/',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk krijon
   upload.array('files'),
   controller.create
 );
@@ -211,7 +211,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk modifikon
   upload.array('files'),
   controller.update
 );
@@ -236,7 +236,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk fshin
   controller.remove
 );
 
@@ -264,7 +264,7 @@ router.delete(
 router.delete(
   '/:id/attachments/:fileId',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('professor'), // ✅ vetëm professor — admin nuk fshin attachment
   controller.removeAttachment
 );
 
@@ -272,7 +272,7 @@ router.delete(
  * @swagger
  * /api/assignments/{assignmentId}/submissions:
  *   get:
- *     summary: Get submissions for assignment (professor only)
+ *     summary: Get submissions for assignment (professor and admin)
  *     tags: [Assignments]
  *     security:
  *       - bearerAuth: []
@@ -288,7 +288,7 @@ router.delete(
 router.get(
   '/:assignmentId/submissions',
   authenticate,
-  authorize('admin', 'professor'),
+  authorize('admin', 'professor'), // ✅ të dy shohin submissions
   submissionController.getByAssignment
 );
 

@@ -26,7 +26,7 @@ const getReport = async (req, res) => {
       dateTo:      req.query.dateTo      || null,
     };
 
-    // professor can only see own courses
+    // ✅ professor sheh vetëm kurset e tij — pavarësisht çfarë dërgon fronti
     if (req.user.role === 'professor') {
       filters.professorId = req.user.id;
     }
@@ -52,6 +52,14 @@ const getCourseDetail = async (req, res) => {
       dateTo:       req.query.dateTo       || null,
     };
 
+    // ✅ professor nuk mund të shohë detail të kursit të profesorit tjetër
+    if (req.user.role === 'professor') {
+      const belongs = await service.coursebelongsToProfessor(courseId, req.user.id);
+      if (!belongs) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to access this course.' });
+      }
+    }
+
     const data = await service.getCourseDetail(courseId, filters);
     res.json({ success: true, data });
   } catch (err) {
@@ -73,6 +81,7 @@ const exportReport = async (req, res) => {
       dateTo:      req.query.dateTo      || null,
     };
 
+    // ✅ professor eksporton vetëm kurset e tij
     if (req.user.role === 'professor') {
       filters.professorId = req.user.id;
     }
@@ -97,6 +106,14 @@ const exportCourseTable = async (req, res) => {
       dateFrom:     req.query.dateFrom     || null,
       dateTo:       req.query.dateTo       || null,
     };
+
+    // ✅ professor nuk mund të eksportojë kursin e profesorit tjetër
+    if (req.user.role === 'professor') {
+      const belongs = await service.coursebelongsToProfessor(courseId, req.user.id);
+      if (!belongs) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to export this course.' });
+      }
+    }
 
     await service.exportCourseTable(courseId, filters, format, res);
   } catch (err) {

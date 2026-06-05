@@ -1,4 +1,3 @@
-// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import SignIn        from "./pages/AuthPages/SignIn";
@@ -120,7 +119,12 @@ const AppRoutes = () => {
         <Route path="/assignments/:id/submissions" element={<AssignmentSubs />} />
         <Route path="/stats"               element={<Stats />} />
         <Route path="/data-tools"          element={<DataTools />} />
-        <Route path="/dynamic-report"      element={<DynamicReport />} />  {/* ← NEW */}
+        
+        {/* MBROJTJA NGA STUDENTI (Nëse është student, e kthen në / ) */}
+        <Route 
+          path="/dynamic-report" 
+          element={user?.role === "student" ? <Navigate to="/" replace /> : <DynamicReport />} 
+        />
       </Route>
 
       <Route path="*" element={<NotFound />} />
