@@ -242,15 +242,24 @@ const AppSidebar: React.FC = () => {
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex justify-center py-8">
-        <Link to="/">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <img src="/images/logo/logo.svg" width={150} />
-          ) : (
-            <img src="/images/logo/logo-icon.svg" width={32} />
-          )}
-        </Link>
-      </div>
+     {/* LOGO */}
+    <div className="flex items-center justify-center px-5 py-7 h-20">
+      <Link to="/" className="flex items-center justify-center w-full">
+        {isExpanded || isHovered || isMobileOpen ? (
+          <img
+            src="/images/logo/StudySyncLogo.png"
+            alt="StudySync Logo"
+            className="h-10 w-auto object-contain transition-all duration-200"
+          />
+        ) : (
+          <img
+            src="/images/logo/StudySyncLogo.png"
+            alt="StudySync Mini Logo"
+            className="h-8 w-8 object-contain transition-all duration-200"
+          />
+        )}
+      </Link>
+    </div>
 
       <div className="overflow-y-auto">
         <nav className="px-5">

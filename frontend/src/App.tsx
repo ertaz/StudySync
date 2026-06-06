@@ -28,6 +28,7 @@ import CreateCoursePage from "./pages/Admin/CreateCoursePage";
 import AdminPanel    from "./pages/Admin/AdminPanel";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementsPage";
+import CourseChatPage from "./components/chat/CourseChatPage";
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -119,6 +120,7 @@ const AppRoutes = () => {
         <Route path="/assignments/:id/submissions" element={<AssignmentSubs />} />
         <Route path="/stats"               element={<Stats />} />
         <Route path="/data-tools"          element={<DataTools />} />
+        <Route path="/courses/:id/chat" element={<CourseChatPage />} />
         
         {/* MBROJTJA NGA STUDENTI (Nëse është student, e kthen në / ) */}
         <Route 

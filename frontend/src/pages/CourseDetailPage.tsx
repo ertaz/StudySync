@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchCourseById, Course } from '../api/courseApi';
 import CourseContent from "../components/course/CourseContent";
+import { useAuth } from '../context/AuthContext';
 
 export default function CourseDetailPage() {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -120,13 +122,39 @@ export default function CourseDetailPage() {
 
      {<CourseContent courseId={Number(id)} />}
         
-        
+     </div>
+    {user?.role !== 'professor' && (
+      <div className="rounded-2xl border border-stroke bg-white dark:border-strokedark dark:bg-boxdark p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <span className="text-lg">💬</span>
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-black dark:text-white">
+                Student Discussion Room
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Chat with other enrolled students
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`/courses/${id}/chat`)}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition"
+          >
+            Open Chat
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
-
+    )}
     </div>
-  );
-}
-
+      );
+    }
+    
 // Picks a consistent top-banner colour based on the course id
 function getBannerColor(id: number): string {
   const colors = [
