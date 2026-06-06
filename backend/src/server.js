@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const fs   = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 // ── Krijo folder-at automatikisht nëse nuk ekzistojnë ────────
@@ -9,7 +9,7 @@ const path = require('path');
   'uploads/submissions',
   'uploads/thumbnails',
   'uploads/lessons',
-  'uploads/imports',      // ← i ri, nevojitet për import CSV/Excel
+  'uploads/imports', // ← i ri, nevojitet për import CSV/Excel
 ].forEach((dir) => {
   const full = path.join(__dirname, '..', dir);
   if (!fs.existsSync(full)) {
@@ -18,22 +18,48 @@ const path = require('path');
   }
 });
 
-const app              = require('./app');
-const { sequelize }    = require('./models');
+const app = require('./app');
+const { sequelize } = require('./models');
+
+const http = require('http');
+const { Server } = require('socket.io');
+
+const connectMongoDB = require('./config/mongodb');
+const chatSocket = require('./sockets/chatSocket');
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
+    // MySQL connection
     await sequelize.authenticate();
     console.log('MySQL connected successfully.');
 
-    app.listen(PORT, () => {
+    // MongoDB connection
+    await connectMongoDB();
+    console.log('MongoDB connected successfully.');
+
+    // Create HTTP server
+    const server = http.createServer(app);
+
+    // Socket.IO
+    const io = new Server(server, {
+      cors: {
+        origin: process.env.CLIENT_URL || 'http://localhost:5173',
+        credentials: true,
+      },
+    });
+
+    // Chat socket handlers
+    chatSocket(io);
+
+    // Start server
+    server.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
       console.log(`Swagger docs: http://localhost:${PORT}/api/docs`);
     });
   } catch (err) {
-    console.error('Failed to connect MySQL:', err);
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 };
