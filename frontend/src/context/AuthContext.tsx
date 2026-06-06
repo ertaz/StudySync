@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { loginAPI, logoutAPI, refreshTokenAPI } from '../api/authAPI';
 import { setTokenGetter, setRefreshCallbacks } from '../api/axiosInstance';
+import { disconnectSocket } from '../services/socketService';
 
 interface User {
   id:         number;
@@ -81,15 +82,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const data = await loginAPI({ email, password });
-    // ✅ Access token stored in React state — most secure browser option
-    // ✅ Refresh token is in HTTP-only cookie — set by the server
+
     updateToken(data.accessToken);
     setUser(data.user);
   };
 
-  const logout = async () => {
+   const logout = async () => {
     await logoutAPI();
-    // Clear everything from React state immediately
+    disconnectSocket();
     updateToken(null);
     setUser(null);
   };
