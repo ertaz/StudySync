@@ -88,7 +88,13 @@ const login = async ({ email, password, ip }) => {
   const roleName = user.roles?.[0]?.name || 'student';
 
   // 5. Build JWT payload
-  const payload = { id: user.id, email: user.email, role: roleName };
+  const payload = {
+  id: user.id,
+  email: user.email,
+  role: roleName,
+  first_name: user.first_name,
+  last_name: user.last_name,
+};
 
   // 6. Generate tokens
   const accessToken  = generateAccessToken(payload);
@@ -143,11 +149,14 @@ const refresh = async (rawRefreshToken) => {
   // Revoke old refresh token
   await repo.revokeRefreshToken(tokenHash);
 
-  const payload = {
-    id: decoded.id,
-    email: decoded.email,
-    role: decoded.role,
-  };
+ const payload = {
+  id: user.id,
+  email: user.email,
+  role: roleName,
+  first_name: user.first_name,
+  last_name: user.last_name,
+};
+
 
   // Create new tokens
   const accessToken = generateAccessToken(payload);
