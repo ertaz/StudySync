@@ -30,16 +30,32 @@ const getGlobalSummary = async ({ professorId, courseId, dateFrom, dateTo } = {}
     return { totalStudents: 0, activeCourses: 0, submissionRate: 0, unsubmittedCount: 0 };
   }
 
-  // Unique enrolled students across filtered courses
+  // FIX: Unique enrolled students — only users with role='student'
   const enrollmentRows = await Enrollment.findAll({
-    where:      { course_id: { [Op.in]: courseIds } },
-    attributes: [[fn('COUNT', fn('DISTINCT', col('user_id'))), 'cnt']],
-    raw:        true,
+    where: { course_id: { [Op.in]: courseIds } },
+    include: [{
+      model:      User,
+      as:         'student',
+      attributes: [],
+      where:      { is_active: 1 },
+      required:   true,
+      include: [{
+        model:    StudentProfile,
+        as:       'studentProfile',
+        attributes: [],
+        required: true,
+      }],
+    }],
+    attributes: [[fn('COUNT', fn('DISTINCT', col('Enrollment.user_id'))), 'cnt']],
+    raw: true,
   });
   const totalStudents = parseInt(enrollmentRows[0]?.cnt || 0);
 
-  // Assignments in date range
-  const assignmentWhere = { course_id: { [Op.in]: courseIds } };
+  // Assignments in date range — FIX: only assignments WITH a section_id
+  const assignmentWhere = {
+    course_id:  { [Op.in]: courseIds },
+    section_id: { [Op.ne]: null },        // FIX: exclude orphan assignments
+  };
   if (dateFrom || dateTo) {
     assignmentWhere.created_at = {};
     if (dateFrom) assignmentWhere.created_at[Op.gte] = new Date(dateFrom);
@@ -50,24 +66,56 @@ const getGlobalSummary = async ({ professorId, courseId, dateFrom, dateTo } = {}
     where:      assignmentWhere,
     attributes: ['id'],
   });
-  const assignmentIds   = assignments.map(a => a.id);
+  const assignmentIds    = assignments.map(a => a.id);
   const totalAssignments = assignmentIds.length;
 
-  // Assignments that have at least one submission
-  let submittedCount = 0;
+  // FIX: submission rate = (student×assignment pairs that have a submission) / (total student×assignment pairs)
+  // Total pairs = enrolled students per course × assignments per course (scoped)
+  let submittedPairs = 0;
+  let totalPairs     = 0;
+
   if (totalAssignments > 0) {
-    const rows = await Submission.findAll({
-      where: { assignment_id: { [Op.in]: assignmentIds } },
-      attributes: [[fn('COUNT', fn('DISTINCT', col('assignment_id'))), 'cnt']],
-      raw: true,
+    // Count total student×assignment pairs
+    for (const cId of courseIds) {
+      const studentCount = await Enrollment.count({
+        where: { course_id: cId },
+        include: [{
+          model:    User,
+          as:       'student',
+          attributes: [],
+          required: true,
+          include: [{
+            model:    StudentProfile,
+            as:       'studentProfile',
+            attributes: [],
+            required: true,
+          }],
+        }],
+      });
+
+      const courseAsgIds = assignmentIds; // already scoped to courseIds
+      // only assignments belonging to this specific course
+      const courseAssignments = await Assignment.findAll({
+        where: { id: { [Op.in]: assignmentIds }, course_id: cId },
+        attributes: ['id'],
+      });
+
+      totalPairs += studentCount * courseAssignments.length;
+    }
+
+    // Count actual submission pairs
+    const subRows = await Submission.findAll({
+      where:      { assignment_id: { [Op.in]: assignmentIds } },
+      attributes: [[fn('COUNT', col('id')), 'cnt']],
+      raw:        true,
     });
-    submittedCount = parseInt(rows[0]?.cnt || 0);
+    submittedPairs = parseInt(subRows[0]?.cnt || 0);
   }
 
-  const submissionRate   = totalAssignments > 0
-    ? Math.round((submittedCount / totalAssignments) * 100)
+  const submissionRate   = totalPairs > 0
+    ? Math.round((submittedPairs / totalPairs) * 100)
     : 0;
-  const unsubmittedCount = totalAssignments - submittedCount;
+  const unsubmittedCount = Math.max(totalPairs - submittedPairs, 0);
 
   return {
     totalStudents,
@@ -92,8 +140,8 @@ const getCoursesForReport = async ({ professorId, courseId, dateFrom, dateTo } =
       { model: User,     as: 'professor', attributes: ['id', 'first_name', 'last_name'] },
       { model: Category, as: 'category',  attributes: ['id', 'name'] },
       {
-        model:    CourseSection,
-        as:       'sections',
+        model:      CourseSection,
+        as:         'sections',
         attributes: ['id', 'title'],
       },
     ],
@@ -101,11 +149,28 @@ const getCoursesForReport = async ({ professorId, courseId, dateFrom, dateTo } =
   });
 
   const result = await Promise.all(courses.map(async (course) => {
-    // Student count for this course
-    const studentCount = await Enrollment.count({ where: { course_id: course.id } });
+    // FIX: count only real students (those with a StudentProfile)
+    const studentCount = await Enrollment.count({
+      where: { course_id: course.id },
+      include: [{
+        model:    User,
+        as:       'student',
+        attributes: [],
+        required: true,
+        include: [{
+          model:    StudentProfile,
+          as:       'studentProfile',
+          attributes: [],
+          required: true,
+        }],
+      }],
+    });
 
-    // Assignments (filtered by date)
-    const asgWhere = { course_id: course.id };
+    // FIX: only assignments WITH a section_id
+    const asgWhere = {
+      course_id:  course.id,
+      section_id: { [Op.ne]: null },
+    };
     if (dateFrom || dateTo) {
       asgWhere.created_at = {};
       if (dateFrom) asgWhere.created_at[Op.gte] = new Date(dateFrom);
@@ -113,23 +178,24 @@ const getCoursesForReport = async ({ professorId, courseId, dateFrom, dateTo } =
     }
 
     const assignments = await Assignment.findAll({
-      where: asgWhere,
+      where:      asgWhere,
       attributes: ['id'],
     });
     const assignmentIds    = assignments.map(a => a.id);
     const totalAssignments = assignmentIds.length;
 
+    // FIX: with/withoutSubmission based on student×assignment pairs
     let withSubmission    = 0;
     let withoutSubmission = 0;
 
     if (totalAssignments > 0) {
       const rows = await Submission.findAll({
         where:      { assignment_id: { [Op.in]: assignmentIds } },
-        attributes: [[fn('COUNT', fn('DISTINCT', col('assignment_id'))), 'cnt']],
+        attributes: [[fn('COUNT', col('id')), 'cnt']],
         raw:        true,
       });
       withSubmission    = parseInt(rows[0]?.cnt || 0);
-      withoutSubmission = totalAssignments - withSubmission;
+      withoutSubmission = Math.max(studentCount * totalAssignments - withSubmission, 0);
     }
 
     return {
@@ -159,9 +225,12 @@ const getCoursesForReport = async ({ professorId, courseId, dateFrom, dateTo } =
 // ─────────────────────────────────────────────
 const getCourseSubmissionTable = async (courseId, { sectionId, assignmentId, dateFrom, dateTo } = {}) => {
   // Build assignment filter
-  const asgWhere = { course_id: courseId };
-  if (sectionId)    asgWhere.section_id = sectionId;
-  if (assignmentId) asgWhere.id         = assignmentId;
+  // FIX: when no sectionId filter, still require section_id IS NOT NULL
+  const asgWhere = {
+    course_id:  courseId,
+    section_id: sectionId ? sectionId : { [Op.ne]: null },
+  };
+  if (assignmentId) asgWhere.id = assignmentId;
 
   const assignments = await Assignment.findAll({
     where:   asgWhere,
@@ -175,17 +244,19 @@ const getCourseSubmissionTable = async (courseId, { sectionId, assignmentId, dat
   const asgMap        = {};
   assignments.forEach(a => { asgMap[a.id] = a; });
 
-  // All enrolled students in this course
+  // FIX: only enrolled users that have a StudentProfile (real students, not admins)
   const enrollments = await Enrollment.findAll({
-    where:   { course_id: courseId },
+    where: { course_id: courseId },
     include: [{
       model:   User,
       as:      'student',
       attributes: ['id', 'first_name', 'last_name'],
+      required: true,
       include: [{
         model:      StudentProfile,
         as:         'studentProfile',
         attributes: ['student_number'],
+        required:   true,               // FIX: INNER JOIN — excludes non-students
       }],
     }],
   });
@@ -193,7 +264,7 @@ const getCourseSubmissionTable = async (courseId, { sectionId, assignmentId, dat
   const rows = [];
 
   for (const enrollment of enrollments) {
-    const student = enrollment.student;
+    const student       = enrollment.student;
     const studentNumber = student.studentProfile?.student_number || String(student.id);
 
     for (const asg of assignments) {
@@ -205,6 +276,7 @@ const getCourseSubmissionTable = async (courseId, { sectionId, assignmentId, dat
         if (dateTo)   subWhere.submitted_at[Op.lte] = new Date(dateTo);
       }
 
+      // FIX: findOne is correct — one row per student×assignment (no duplicates)
       const submission = await Submission.findOne({ where: subWhere });
 
       rows.push({
@@ -228,13 +300,32 @@ const getCourseSubmissionTable = async (courseId, { sectionId, assignmentId, dat
 // PIE DATA FOR A COURSE (with optional section/assignment filter)
 // ─────────────────────────────────────────────
 const getCoursePieData = async (courseId, { sectionId, assignmentId, dateFrom, dateTo } = {}) => {
-  const asgWhere = { course_id: courseId };
-  if (sectionId)    asgWhere.section_id = sectionId;
-  if (assignmentId) asgWhere.id         = assignmentId;
+  // FIX: same section_id guard as submission table
+  const asgWhere = {
+    course_id:  courseId,
+    section_id: sectionId ? sectionId : { [Op.ne]: null },
+  };
+  if (assignmentId) asgWhere.id = assignmentId;
 
   const assignments   = await Assignment.findAll({ where: asgWhere, attributes: ['id'] });
   const assignmentIds = assignments.map(a => a.id);
-  const totalStudents = await Enrollment.count({ where: { course_id: courseId } });
+
+  // FIX: count only real students
+  const totalStudents = await Enrollment.count({
+    where: { course_id: courseId },
+    include: [{
+      model:    User,
+      as:       'student',
+      attributes: [],
+      required: true,
+      include: [{
+        model:    StudentProfile,
+        as:       'studentProfile',
+        attributes: [],
+        required: true,
+      }],
+    }],
+  });
 
   if (!assignmentIds.length) {
     return { totalStudents, submitted: 0, notSubmitted: totalStudents };
@@ -247,6 +338,8 @@ const getCoursePieData = async (courseId, { sectionId, assignmentId, dateFrom, d
     if (dateTo)   subWhere.submitted_at[Op.lte] = new Date(dateTo);
   }
 
+  // FIX: pie tregon studentë unikë që kanë dorëzuar të paktën një assignment
+  // (kjo është interpretimi më i saktë vizual për pie chart)
   const rows = await Submission.findAll({
     where:      subWhere,
     attributes: [[fn('COUNT', fn('DISTINCT', col('user_id'))), 'cnt']],
@@ -262,19 +355,28 @@ const getCoursePieData = async (courseId, { sectionId, assignmentId, dateFrom, d
 // ─────────────────────────────────────────────
 // PROFESSORS LIST (for filter dropdown)
 // ─────────────────────────────────────────────
+// REPLACE getProfessorsForFilter in reportRepository.js with this:
+
 const getProfessorsForFilter = async () => {
-  const profiles = await ProfessorProfile.findAll({
-    include: [{
-      model:      User,
-      as:         'user',
-      attributes: ['id', 'first_name', 'last_name'],
-    }],
-    attributes: ['id', 'user_id'],
+  // FIX: return only professors that have at least one course assigned to them
+  const courseProfessorIds = await Course.findAll({
+    attributes: [[fn('DISTINCT', col('professor_id')), 'professor_id']],
+    where:      { professor_id: { [Op.ne]: null } },
+    raw:        true,
+  });
+  const professorUserIds = courseProfessorIds.map(r => r.professor_id).filter(Boolean);
+
+  if (!professorUserIds.length) return [];
+
+  const users = await User.findAll({
+    where:      { id: { [Op.in]: professorUserIds } },
+    attributes: ['id', 'first_name', 'last_name'],
+    order:      [['first_name', 'ASC']],
   });
 
-  return profiles.map(p => ({
-    id:   p.user?.id,
-    name: p.user ? `${p.user.first_name} ${p.user.last_name}` : 'N/A',
+  return users.map(u => ({
+    id:   u.id,
+    name: `${u.first_name} ${u.last_name}`,
   }));
 };
 
