@@ -6,6 +6,8 @@ const path       = require('path');
 const categoryController           = require('../controllers/categoryController');
 const categoryExportImportController = require('../controllers/categoryExportImportController');
 const { authenticate, authorize }  = require('../middlewares/authMiddleware');
+const { authenticate } = require('../middlewares/authMiddleware'); 
+const checkPermission = require('../middlewares/checkPermission'); 
 
 const importStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/imports'),
@@ -111,6 +113,6 @@ router.get('/', authenticate, categoryController.getAll);
  *       201:
  *         description: Category created
  */
-router.post('/', authenticate, authorize('admin'), categoryController.create);
+router.post('/', authenticate, checkPermission('category:create'), categoryController.create);
 
 module.exports = router;
