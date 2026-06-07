@@ -29,6 +29,7 @@ import AdminPanel    from "./pages/Admin/AdminPanel";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementsPage";
 import CourseChatPage from "./components/chat/CourseChatPage";
+import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -92,6 +93,7 @@ const AppRoutes = () => {
       <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
       <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
       <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
+      <Route path="/courses/:id/announcements/edit/:announcementId" element={<EditAnnouncementPage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

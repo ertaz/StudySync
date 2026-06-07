@@ -13,7 +13,7 @@ const AnnouncementsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canCreate = user?.role === "admin" || user?.role === "professor";
+  const canManage = user?.role === "admin" || user?.role === "professor";
 
   useEffect(() => {
     if (!courseId) return;
@@ -22,9 +22,7 @@ const AnnouncementsPage = () => {
       try {
         setLoading(true);
         setError(null);
-
         const res = await api.get(`/announcements/course/${courseId}`);
-
         setAnnouncements(res.data.data || []);
       } catch (err) {
         console.error(err);
@@ -36,6 +34,18 @@ const AnnouncementsPage = () => {
 
     fetchAnnouncements();
   }, [courseId]);
+
+  const handleDelete = async (announcementId: number) => {
+    if (!confirm("Are you sure you want to delete this announcement?")) return;
+    try {
+      await api.delete(`/announcements/${announcementId}`);
+      setAnnouncements((prev: any) =>
+        prev.filter((a: any) => a.id !== announcementId)
+      );
+    } catch (err) {
+      alert("Failed to delete announcement.");
+    }
+  };
 
   if (loading) {
     return (
@@ -58,7 +68,7 @@ const AnnouncementsPage = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Course Announcements</h1>
 
-        {canCreate && (
+        {canManage && (
           <button
             onClick={() => navigate(`/courses/${id}/announcements/create`)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
@@ -77,11 +87,37 @@ const AnnouncementsPage = () => {
               key={item.id}
               className="border rounded p-4 bg-white shadow-sm"
             >
-              <h3 className="font-semibold text-lg">{item.title}</h3>
-              <p className="text-gray-700 mt-1">{item.content}</p>
-              <p className="text-xs text-gray-400 mt-2">
-                Created: {new Date(item.created_at).toLocaleString()}
-              </p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-semibold text-lg">{item.title}</h3>
+                  <p className="text-gray-700 mt-1">{item.content}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Created: {new Date(item.created_at).toLocaleString()}
+                  </p>
+                </div>
+
+                {canManage && (
+                  <div className="flex gap-2 ml-4 shrink-0">
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/courses/${id}/announcements/edit/${item.id}`,
+                          { state: { title: item.title, content: item.content } }
+                        )
+                      }
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="text-sm text-red-500 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
