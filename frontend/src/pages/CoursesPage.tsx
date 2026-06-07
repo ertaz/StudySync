@@ -269,11 +269,16 @@ function CourseCard({
             </div>
           )}
 
-          {isProfessor && !isAssignedProfessor && (
-            <span className="text-xs text-gray-400 italic">
-              Not assigned
-            </span>
-          )}
+         {isProfessor && !isAssignedProfessor && (
+          <div className="flex gap-2 flex-wrap justify-end">
+            <button
+              onClick={() => navigate(`/courses/${course.id}/announcements`)}
+              className="text-sm font-medium text-orange-500"
+            >
+                Announcements
+            </button>
+          </div>
+        )}
 
           {/* STUDENT */}
           {!isAdmin && !isProfessor && (
