@@ -5,6 +5,7 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const {
   getAnnouncementsByCourse,
   createAnnouncement,
+  updateAnnouncement,
   deleteAnnouncement,
 } = require("../controllers/announcementController");
 
@@ -13,13 +14,16 @@ router.get("/test", (req, res) => {
   res.json({ ok: true });
 });
 
-// GET by course - të gjithë të loguar
+// GET by course
 router.get("/course/:courseId", authenticate, getAnnouncementsByCourse);
 
-// CREATE - vetëm admin dhe professor
+// CREATE
 router.post("/", authenticate, authorize("admin", "professor"), createAnnouncement);
 
-// DELETE - vetëm admin dhe professor
+// UPDATE
+router.put("/:id", authenticate, authorize("admin", "professor"), updateAnnouncement);
+
+// DELETE
 router.delete("/:id", authenticate, authorize("admin", "professor"), deleteAnnouncement);
 
 module.exports = router;
