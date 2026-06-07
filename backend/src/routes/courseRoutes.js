@@ -7,8 +7,6 @@ const courseController             = require('../controllers/courseController');
 const courseExportImportController = require('../controllers/courseExportImportController');
 const { authenticate, authorize }  = require('../middlewares/authMiddleware');
 const upload                       = require('../middlewares/uploadMiddleware');
-const enrollmentGuard  = require('../middlewares/enrollmentGuard');
-const checkPermission  = require('../middlewares/checkPermission'); 
 
 const importStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/imports'),
@@ -79,12 +77,12 @@ router.post(
 
 // ── Existing ──────────────────────────────────────────────────
 router.get('/',    authenticate, courseController.getAll);
-router.get('/:id', authenticate, enrollmentGuard, courseController.getOne);
+router.get('/:id', authenticate, courseController.getOne);
 
 router.post(
   '/',
   authenticate,
-  checkPermission('course:create'), 
+  authorize('admin'),
   upload.single('thumbnail'),
   courseController.create
 );
@@ -92,11 +90,11 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  checkPermission('course:edit'), 
+  authorize('admin'),
   upload.single('thumbnail'),
   courseController.update
 );
 
-router.delete('/:id', authenticate, checkPermission('course:delete'), courseController.remove); 
+router.delete('/:id', authenticate, authorize('admin'), courseController.remove);
 
 module.exports = router;

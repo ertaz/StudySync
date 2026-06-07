@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import SignIn        from "./pages/AuthPages/SignIn";
 import SignUp        from "./pages/AuthPages/SignUp";
 import NotFound      from "./pages/OtherPage/NotFound";
-import UserProfiles  from "./pages/UserProfiles";
 import Videos        from "./pages/UiElements/Videos";
 import Images        from "./pages/UiElements/Images";
 import Alerts        from "./pages/UiElements/Alerts";
@@ -30,6 +29,7 @@ import AnnouncementsPage from "./pages/AnnouncementsPage";
 import CreateAnnouncementPage from "./pages/CreateAnnouncementsPage";
 import CourseChatPage from "./components/chat/CourseChatPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
+import ProfilePage from './pages/Profile/ProfilePage';
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -94,13 +94,13 @@ const AppRoutes = () => {
       <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
       <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
       <Route path="/courses/:id/announcements/edit/:announcementId" element={<EditAnnouncementPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index path="/"              element={<Home />} />
         <Route path="/courses"             element={<CoursesPage />} />
         <Route path="/courses/:id"         element={<CourseDetailPage />} />
-        <Route path="/profile"             element={<UserProfiles />} />
         <Route path="/calendar"            element={<Calendar />} />
         <Route path="/blank"               element={<Blank />} />
         <Route path="/form-elements"       element={<FormElements />} />

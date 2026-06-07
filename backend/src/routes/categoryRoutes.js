@@ -6,7 +6,6 @@ const path       = require('path');
 const categoryController           = require('../controllers/categoryController');
 const categoryExportImportController = require('../controllers/categoryExportImportController');
 const { authenticate, authorize }  = require('../middlewares/authMiddleware');
-const { authenticate } = require('../middlewares/authMiddleware'); 
 const checkPermission = require('../middlewares/checkPermission'); 
 
 const importStorage = multer.diskStorage({
