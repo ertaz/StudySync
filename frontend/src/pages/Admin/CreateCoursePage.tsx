@@ -11,22 +11,25 @@ export default function CreateCoursePage() {
   const navigate = useNavigate();
 
   const [categories, setCategories]   = useState<Category[]>([]);
-  const [professors, setProfessors]   = useState<Professor[]>([]);   // ← NEW
+  const [professors, setProfessors]   = useState<Professor[]>([]);
 
   const [title, setTitle]             = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId]   = useState<number | ''>('');
-  const [professorId, setProfessorId] = useState<number | ''>('');   // ← NEW
+  const [professorId, setProfessorId] = useState<number | ''>('');
   const [thumbnail, setThumbnail]     = useState<File | null>(null);
   const [thumbPreview, setThumbPreview] = useState<string | null>(null);
-  const [formError, setFormError]     = useState('');
   const [formLoading, setFormLoading] = useState(false);
+  const [generalError, setGeneralError] = useState('');
+
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [showCatModal, setShowCatModal] = useState(false);
   const [newCatName, setNewCatName]     = useState('');
   const [newCatDesc, setNewCatDesc]     = useState('');
   const [catLoading, setCatLoading]     = useState(false);
   const [catError, setCatError]         = useState('');
+  const [catNameError, setCatNameError] = useState('');
 
   useEffect(() => {
     Promise.all([fetchCategories(), fetchProfessors()]).then(([cats, profs]) => {
@@ -42,6 +45,7 @@ export default function CreateCoursePage() {
       const reader = new FileReader();
       reader.onloadend = () => setThumbPreview(reader.result as string);
       reader.readAsDataURL(file);
+      setFieldErrors(prev => ({ ...prev, thumbnail: '' }));
     } else {
       setThumbPreview(null);
     }
@@ -54,39 +58,79 @@ export default function CreateCoursePage() {
     multiple: false,
   });
 
+  const clearError = (field: string) =>
+    setFieldErrors(prev => ({ ...prev, [field]: '' }));
+
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!title.trim())
+      errors.title = 'Course title is required.';
+    else if (title.trim().length < 3)
+      errors.title = 'Course title must be at least 3 characters.';
+
+    if (!description.trim())
+      errors.description = 'Description is required.';
+
+    if (!categoryId)
+      errors.category = 'Please select a category.';
+
+    if (!professorId)
+      errors.professor = 'Please assign a professor.';
+
+    if (!thumbnail)
+      errors.thumbnail = 'Please upload a thumbnail image.';
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    setFormError('');
-    if (!title.trim()) { setFormError('Title is required'); return; }
+    setGeneralError('');
+
+    if (!validate()) return;
+
     setFormLoading(true);
     try {
       await createCourse({
         title, description,
-        category_id:  categoryId  || undefined,
-        professor_id: professorId || undefined,   // ← NEW
-        thumbnail:    thumbnail   || undefined,
+        category_id:  categoryId as number,
+        professor_id: professorId as number,
+        thumbnail:    thumbnail as File,
       });
       navigate('/admin/courses');
     } catch (err: any) {
-      setFormError(err?.response?.data?.message || 'Failed to create course');
+      setGeneralError(err?.response?.data?.message || 'Failed to create course');
     } finally { setFormLoading(false); }
   };
 
   const handleCreateCategory = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setCatError('');
-    if (!newCatName.trim()) { setCatError('Name is required'); return; }
+    setCatNameError('');
+    if (!newCatName.trim()) { setCatNameError('Category name is required.'); return; }
+    if (newCatName.trim().length < 2) { setCatNameError('Name must be at least 2 characters.'); return; }
     setCatLoading(true);
     try {
       const newCat = await createCategory(newCatName, newCatDesc);
       setCategories((prev) => [...prev, newCat]);
       setCategoryId(newCat.id);
+      setFieldErrors(prev => ({ ...prev, category: '' }));
       setNewCatName(''); setNewCatDesc('');
       setShowCatModal(false);
     } catch (err: any) {
       setCatError(err?.response?.data?.message || 'Failed to create category');
     } finally { setCatLoading(false); }
   };
+
+  const inputBase = 'w-full rounded-lg border px-4 py-3 text-sm outline-none transition';
+  const inputNormal = 'border-stroke bg-transparent text-black dark:border-strokedark dark:text-white focus:border-blue-500';
+  const inputError = 'border-red-500 bg-red-50 text-black dark:bg-red-500/10 dark:text-white focus:border-red-500';
+
+  const selectBase = 'rounded-lg border px-4 py-3 text-sm outline-none transition';
+  const selectNormal = 'border-stroke bg-white text-black dark:border-strokedark dark:text-white dark:bg-boxdark focus:border-blue-500';
+  const selectError = 'border-red-500 bg-red-50 text-black dark:bg-red-500/10 dark:text-white dark:bg-boxdark focus:border-red-500';
 
   return (
     <div className="mx-auto max-w-screen-md p-4 md:p-6">
@@ -112,25 +156,40 @@ export default function CreateCoursePage() {
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
               Course Title <span className="text-red-500">*</span>
             </label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+            <input
+              type="text" value={title}
+              onChange={(e) => { setTitle(e.target.value); clearError('title'); }}
               placeholder="e.g. Introduction to React"
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition" />
+              className={`${inputBase} ${fieldErrors.title ? inputError : inputNormal}`}
+            />
+            {fieldErrors.title && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{fieldErrors.title}</p>}
           </div>
 
           {/* Description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Description</label>
-            <textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)}
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+              Description <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              rows={4} value={description}
+              onChange={(e) => { setDescription(e.target.value); clearError('description'); }}
               placeholder="Provide a brief overview of what students will learn..."
-              className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500 transition resize-none" />
+              className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition resize-none ${fieldErrors.description ? inputError : inputNormal}`}
+            />
+            {fieldErrors.description && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{fieldErrors.description}</p>}
           </div>
 
           {/* Category */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-black dark:text-white">Category</label>
+            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+              Category <span className="text-red-500">*</span>
+            </label>
             <div className="flex gap-3">
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-                className="flex-1 rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
+              <select
+                value={categoryId}
+                onChange={(e) => { setCategoryId(e.target.value ? Number(e.target.value) : ''); clearError('category'); }}
+                className={`flex-1 ${selectBase} ${fieldErrors.category ? selectError : selectNormal}`}
+              >
                 <option value="">— Select a category —</option>
                 {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
               </select>
@@ -139,26 +198,31 @@ export default function CreateCoursePage() {
                 + New Category
               </button>
             </div>
+            {fieldErrors.category && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{fieldErrors.category}</p>}
           </div>
 
-          {/* ── Professor dropdown ── NEW */}
+          {/* Professor */}
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Assign Professor
+              Assign Professor <span className="text-red-500">*</span>
             </label>
-            <select value={professorId} onChange={(e) => setProfessorId(e.target.value ? Number(e.target.value) : '')}
-              className="w-full rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white dark:bg-boxdark outline-none focus:border-blue-500 transition">
+            <select
+              value={professorId}
+              onChange={(e) => { setProfessorId(e.target.value ? Number(e.target.value) : ''); clearError('professor'); }}
+              className={`w-full ${selectBase} ${fieldErrors.professor ? selectError : selectNormal}`}
+            >
               <option value="">— Select a professor —</option>
               {professors.map((p) => (
                 <option key={p.id} value={p.id}>{p.first_name} {p.last_name} ({p.email})</option>
               ))}
             </select>
+            {fieldErrors.professor && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{fieldErrors.professor}</p>}
           </div>
 
           {/* Thumbnail */}
           <div>
             <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-              Thumbnail Image{' '}
+              Thumbnail Image <span className="text-red-500">*</span>{' '}
               <span className="text-gray-400 text-xs font-normal">(JPEG, PNG, WEBP — max 5MB)</span>
             </label>
             {thumbPreview ? (
@@ -173,12 +237,12 @@ export default function CreateCoursePage() {
                 </div>
               </div>
             ) : (
-              <div className="transition border border-gray-300 border-dashed cursor-pointer dark:hover:border-brand-500 dark:border-gray-700 rounded-xl hover:border-brand-500">
-                <div {...getRootProps()} className={`rounded-xl p-10 ${isDragActive ? 'bg-gray-100 dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900'}`}>
+              <div className={`transition border border-dashed cursor-pointer rounded-xl ${fieldErrors.thumbnail ? 'border-red-500 bg-red-50 dark:bg-red-500/10' : 'border-gray-300 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-500'}`}>
+                <div {...getRootProps()} className={`rounded-xl p-10 ${isDragActive ? 'bg-gray-100 dark:bg-gray-800' : ''}`}>
                   <input {...getInputProps()} />
                   <div className="flex flex-col items-center">
                     <div className="mb-5 flex justify-center">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400">
+                      <div className={`flex h-16 w-16 items-center justify-center rounded-full ${fieldErrors.thumbnail ? 'bg-red-100 text-red-400 dark:bg-red-500/20' : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400'}`}>
                         <svg className="fill-current" width="29" height="28" viewBox="0 0 29 28" xmlns="http://www.w3.org/2000/svg">
                           <path fillRule="evenodd" clipRule="evenodd" d="M14.5019 3.91699C14.2852 3.91699 14.0899 4.00891 13.953 4.15589L8.57363 9.53186C8.28065 9.82466 8.2805 10.2995 8.5733 10.5925C8.8661 10.8855 9.34097 10.8857 9.63396 10.5929L13.7519 6.47752V18.667C13.7519 19.0812 14.0877 19.417 14.5019 19.417C14.9161 19.417 15.2519 19.0812 15.2519 18.667V6.48234L19.3653 10.5929C19.6583 10.8857 20.1332 10.8855 20.426 10.5925C20.7188 10.2995 20.7186 9.82463 20.4256 9.53184L15.0838 4.19378C14.9463 4.02488 14.7367 3.91699 14.5019 3.91699ZM5.91626 18.667C5.91626 18.2528 5.58047 17.917 5.16626 17.917C4.75205 17.917 4.41626 18.2528 4.41626 18.667V21.8337C4.41626 23.0763 5.42362 24.0837 6.66626 24.0837H22.3339C23.5766 24.0837 24.5839 23.0763 24.5839 21.8337V18.667C24.5839 18.2528 24.2482 17.917 23.8339 17.917C23.4197 17.917 23.0839 18.2528 23.0839 18.667V21.8337C23.0839 22.2479 22.7482 22.5837 22.3339 22.5837H6.66626C6.25205 22.5837 5.91626 22.2479 5.91626 21.8337V18.667Z" />
                         </svg>
@@ -193,10 +257,11 @@ export default function CreateCoursePage() {
                 </div>
               </div>
             )}
+            {fieldErrors.thumbnail && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{fieldErrors.thumbnail}</p>}
           </div>
 
-          {formError && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{formError}</p>
+          {generalError && (
+            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{generalError}</p>
           )}
 
           <div className="flex gap-4 pt-2">
@@ -213,13 +278,13 @@ export default function CreateCoursePage() {
         </form>
       </div>
 
-      {/* Create Category Modal — unchanged */}
+      {/* Create Category Modal */}
       {showCatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-boxdark shadow-2xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
               <h2 className="text-lg font-bold text-black dark:text-white">New Category</h2>
-              <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); }}
+              <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); setCatNameError(''); }}
                 className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div className="overflow-y-auto px-8 pb-8">
@@ -228,9 +293,13 @@ export default function CreateCoursePage() {
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">
                     Name <span className="text-red-500">*</span>
                   </label>
-                  <input type="text" value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+                  <input
+                    type="text" value={newCatName}
+                    onChange={(e) => { setNewCatName(e.target.value); setCatNameError(''); }}
                     placeholder="e.g. Programming"
-                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm text-black dark:border-strokedark dark:text-white outline-none focus:border-blue-500" />
+                    className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition ${catNameError ? 'border-red-500 bg-red-50 dark:bg-red-500/10 text-black dark:text-white' : 'border-stroke bg-transparent text-black dark:border-strokedark dark:text-white focus:border-blue-500'}`}
+                  />
+                  {catNameError && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{catNameError}</p>}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-black dark:text-white">Description</label>
@@ -242,7 +311,7 @@ export default function CreateCoursePage() {
                   <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{catError}</p>
                 )}
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); }}
+                  <button type="button" onClick={() => { setShowCatModal(false); setCatError(''); setCatNameError(''); }}
                     className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition">
                     Cancel
                   </button>
