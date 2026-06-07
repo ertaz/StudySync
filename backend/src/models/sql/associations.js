@@ -14,6 +14,8 @@ const ProfessorProfile = require('./ProfessorProfile');
 const StudentProfile   = require('./StudentProfile');
 const RefreshToken     = require('./RefreshToken');
 const AuditLog         = require('./AuditLog');
+const Permission    = require('./Permission');
+const RolePermission = require('./RolePermission');
 
 // ─────────────────────────────────────────────
 // USER ↔ ROLE
@@ -245,4 +247,20 @@ SubmissionFile.belongsTo(File, {
 File.hasMany(SubmissionFile, {
   foreignKey: 'file_id',
   as:         'submissionFiles'
+});
+
+// ─────────────────────────────────────────────
+// ROLE ↔ PERMISSION
+// ─────────────────────────────────────────────
+Role.belongsToMany(Permission, {
+  through:    RolePermission,
+  foreignKey: 'role_id',
+  otherKey:   'permission_id',
+  as:         'permissions',
+});
+Permission.belongsToMany(Role, {
+  through:    RolePermission,
+  foreignKey: 'permission_id',
+  otherKey:   'role_id',
+  as:         'roles',
 });

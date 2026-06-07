@@ -21,6 +21,8 @@ const path = require('path');
 const app = require('./app');
 const { sequelize } = require('./models');
 
+const seedPermissions = require('./utils/seedPermissions');
+
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -34,6 +36,8 @@ const startServer = async () => {
     // MySQL connection
     await sequelize.authenticate();
     console.log('MySQL connected successfully.');
+
+    await seedPermissions();
 
     // MongoDB connection
     await connectMongoDB();

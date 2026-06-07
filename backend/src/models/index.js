@@ -3,6 +3,8 @@ const sequelize = require('../config/db');
 const User             = require('./sql/User');
 const Role             = require('./sql/Role');
 const UserRole         = require('./sql/UserRole');
+const Permission       = require('./sql/Permission'); 
+const RolePermission   = require('./sql/RolePermission');
 const RefreshToken     = require('./sql/RefreshToken');
 const StudentProfile   = require('./sql/StudentProfile');
 const ProfessorProfile = require('./sql/ProfessorProfile');
@@ -27,6 +29,8 @@ const db = {
   User,
   Role,
   UserRole,
+  Permission,    
+  RolePermission,
   RefreshToken,
   StudentProfile,
   ProfessorProfile,
