@@ -149,38 +149,32 @@ const refresh = async (rawRefreshToken) => {
   // Revoke old refresh token
   await repo.revokeRefreshToken(tokenHash);
 
- const payload = {
-  id: user.id,
-  email: user.email,
-  role: roleName,
-  first_name: user.first_name,
-  last_name: user.last_name,
-};
-
+  // Build payload from decoded token — user/roleName are not available here
+  const payload = {
+    id:         decoded.id,
+    email:      decoded.email,
+    role:       decoded.role,
+    first_name: decoded.first_name,
+    last_name:  decoded.last_name,
+  };
 
   // Create new tokens
-  const accessToken = generateAccessToken(payload);
+  const accessToken  = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
   // Store new refresh token
   const newTokenHash = hashToken(refreshToken);
-  await repo.saveRefreshToken(
-    decoded.id,
-    newTokenHash,
-    getRefreshTokenExpiry()
-  );
+  await repo.saveRefreshToken(decoded.id, newTokenHash, getRefreshTokenExpiry());
 
   const user = {
-    id: decoded.id,
-    email: decoded.email,
-    role: decoded.role,
+    id:         decoded.id,
+    email:      decoded.email,
+    role:       decoded.role,
+    first_name: decoded.first_name,
+    last_name:  decoded.last_name,
   };
 
-  return {
-    accessToken,
-    refreshToken,
-    user,
-  };
+  return { accessToken, refreshToken, user };
 };
 
 // ── Logout ────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
+import axios from 'axios';
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { loginAPI, logoutAPI, refreshTokenAPI } from '../api/authAPI';
+import { loginAPI, logoutAPI } from '../api/authAPI';
 import { setTokenGetter, setRefreshCallbacks } from '../api/axiosInstance';
 import { disconnectSocket } from '../services/socketService';
 
@@ -59,22 +60,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let cancelled = false;
 
-    const restoreSession = async () => {
-      try {
-        const data = await refreshTokenAPI();
-        if (!cancelled) {
-          updateToken(data.accessToken);
-          setUser(data.user || null);
-        }
-      } catch {
-        if (!cancelled) {
-          updateToken(null);
-          setUser(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+   const restoreSession = async () => {
+  try {
+    const { data } = await axios.post(
+      `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+      {},
+      { withCredentials: true }
+    );
+    if (!cancelled) {
+      updateToken(data.accessToken);
+      setUser(data.user || null);
+    }
+  } catch {
+    if (!cancelled) {
+      updateToken(null);
+      setUser(null);
+    }
+  } finally {
+    if (!cancelled) setLoading(false);
+  }
+};
 
     restoreSession();
     return () => { cancelled = true; };

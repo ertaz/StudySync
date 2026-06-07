@@ -16,6 +16,7 @@ const submissionRoutes      = require('./routes/submissionRoutes');
 const assignmentReportRoutes = require('./routes/assignmentReportRoutes');
 const announcementRoutes    = require('./routes/announcementRoutes');
 const chatRoutes = require('./routes/chatRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 const studentRoutes    = require('./routes/studentRoutes');
@@ -54,6 +55,7 @@ app.use('/api/assignments',            assignmentRoutes);
 app.use('/api/submissions',            submissionRoutes);
 app.use('/api/announcements',          announcementRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/profile', profileRoutes);
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 app.use('/api/students',               studentRoutes);    // export/import students
