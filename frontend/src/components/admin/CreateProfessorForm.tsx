@@ -28,7 +28,7 @@ const Field = ({
 }: FieldProps) => (
   <div>
     <Label>{label}</Label>
-    <div className="relative">
+    <div className={`relative rounded-lg ${error ? 'ring-2 ring-red-500' : ''}`}>
       <Input
         name={name}
         type={type}
@@ -73,11 +73,66 @@ export default function CreateProfessorForm({ onSuccess, onCancel }: Props) {
     setGeneralError('');
   };
 
+  const validate = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!form.first_name.trim())
+      errors.first_name = 'First name is required.';
+
+    if (!form.last_name.trim())
+      errors.last_name = 'Last name is required.';
+
+    if (!form.email.trim()) {
+      errors.email = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = 'Enter a valid email address.';
+    }
+
+    if (!form.password) {
+      errors.password = 'Password is required.';
+    } else if (form.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters.';
+    } else if (!/[A-Z]/.test(form.password)) {
+      errors.password = 'Password must contain at least one uppercase letter.';
+    } else if (!/[0-9]/.test(form.password)) {
+      errors.password = 'Password must contain at least one number.';
+    }
+
+    if (!form.department.trim())
+      errors.department = 'Department is required.';
+
+    if (!form.title.trim())
+      errors.title = 'Title is required.';
+
+    if (!form.years_of_experience.trim()) {
+      errors.years_of_experience = 'Years of experience is required.';
+    } else {
+      const yoe = parseInt(form.years_of_experience);
+      if (isNaN(yoe) || yoe < 0)
+        errors.years_of_experience = 'Years of experience must be a positive number.';
+    }
+
+    if (!form.phone_number.trim()) {
+      errors.phone_number = 'Phone number is required.';
+    } else if (!/^\d{9}$/.test(form.phone_number)) {
+      errors.phone_number = 'Phone number must be exactly 9 digits.';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setFieldErrors({});
     setGeneralError('');
     setSuccess('');
+
+    if (!validate()) return;
+
     setLoading(true);
 
     try {
@@ -87,10 +142,9 @@ export default function CreateProfessorForm({ onSuccess, onCancel }: Props) {
         email:       form.email,
         password:    form.password,
         department:  form.department,
-        title:       form.title || undefined,
-        years_of_experience: form.years_of_experience
-          ? parseInt(form.years_of_experience) : undefined,
-        phone_number: form.phone_number || undefined,
+        title:               form.title,
+        years_of_experience: parseInt(form.years_of_experience),
+        phone_number:        form.phone_number,
       };
 
       const data = await createProfessorAPI(payload);
@@ -192,18 +246,18 @@ export default function CreateProfessorForm({ onSuccess, onCancel }: Props) {
           </p>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Title" name="title" placeholder="e.g. Dr., Prof."
+            <Field label="Title *" name="title" placeholder="e.g. Dr., Prof."
               value={form.title} onChange={handleChange} error={fieldErrors.title} />
             <Field label="Department *" name="department" placeholder="e.g. Computer Science"
               value={form.department} onChange={handleChange} error={fieldErrors.department} />
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="Years of Experience" name="years_of_experience" type="number"
+            <Field label="Years of Experience *" name="years_of_experience" type="number"
               placeholder="e.g. 5"
               value={form.years_of_experience} onChange={handleChange}
               error={fieldErrors.years_of_experience} />
-            <Field label="Phone Number" name="phone_number" type="tel"
+            <Field label="Phone Number *" name="phone_number" type="tel"
               placeholder="9 digits" hint="9 digits, numbers only"
               value={form.phone_number} onChange={handleChange} error={fieldErrors.phone_number} />
           </div>
