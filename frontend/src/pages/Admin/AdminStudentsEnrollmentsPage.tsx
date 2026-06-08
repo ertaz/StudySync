@@ -103,18 +103,30 @@ function CreateEnrollmentModal({ students, courses, onClose, onSuccess }: Create
   );
 }
 
+// ── Sort types ────────────────────────────────────────────────
+type StudentSort     = 'year_asc' | 'year_desc';
+type EnrollmentSort  = 'date_asc' | 'date_desc';
+
 // ── Main page ─────────────────────────────────────────────────
 export default function AdminStudentsEnrollmentsPage() {
   const navigate = useNavigate();
 
-  const [students, setStudents]         = useState<Student[]>([]);
-  const [enrollments, setEnrollments]   = useState<EnrollmentItem[]>([]);
-  const [courses, setCourses]           = useState<Course[]>([]);
-  const [loadingStudents, setLS]        = useState(true);
-  const [loadingEnroll, setLE]          = useState(true);
-  const [filterCourseId, setFilterCourseId] = useState<number | ''>('');
-  const [showEnrollModal, setShowEnrollModal] = useState(false);
-  const [studentSearch, setStudentSearch] = useState('');
+  const [students, setStudents]       = useState<Student[]>([]);
+  const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
+  const [courses, setCourses]         = useState<Course[]>([]);
+  const [loadingStudents, setLS]      = useState(true);
+  const [loadingEnroll, setLE]        = useState(true);
+
+  const [filterCourseId, setFilterCourseId]     = useState<number | ''>('');
+  const [showEnrollModal, setShowEnrollModal]   = useState(false);
+
+  // Students controls
+  const [studentSearch, setStudentSearch]       = useState('');
+  const [studentSort, setStudentSort]           = useState<StudentSort>('year_asc');
+
+  // Enrollments controls
+  const [enrollmentSearch, setEnrollmentSearch] = useState('');
+  const [enrollmentSort, setEnrollmentSort]     = useState<EnrollmentSort>('date_desc');
 
   const loadStudents = async () => {
     setLS(true);
@@ -140,16 +152,33 @@ export default function AdminStudentsEnrollmentsPage() {
     fetchCourses().then(setCourses).catch(() => {});
   }, []);
 
-  const filteredEnrollments = filterCourseId
-    ? enrollments.filter(e => e.course_id === filterCourseId)
-    : enrollments;
+  // ── Derived: students ─────────────────────────────────────────
+  const filteredStudents = students
+    .filter(s =>
+      !studentSearch ||
+      `${s.first_name} ${s.last_name} ${s.email} ${s.student_number}`
+        .toLowerCase().includes(studentSearch.toLowerCase())
+    )
+    .sort((a, b) =>
+      studentSort === 'year_asc'
+        ? a.enrollment_year - b.enrollment_year
+        : b.enrollment_year - a.enrollment_year
+    );
 
-  const filteredStudents = studentSearch
-    ? students.filter(s =>
-        `${s.first_name} ${s.last_name} ${s.email} ${s.student_number}`
-          .toLowerCase().includes(studentSearch.toLowerCase())
-      )
-    : students;
+  // ── Derived: enrollments ──────────────────────────────────────
+  const filteredEnrollments = enrollments
+    .filter(e => {
+      const matchesCourse = filterCourseId ? e.course_id === filterCourseId : true;
+      const matchesSearch = !enrollmentSearch ||
+        e.student_name.toLowerCase().includes(enrollmentSearch.toLowerCase()) ||
+        e.student_number.toLowerCase().includes(enrollmentSearch.toLowerCase());
+      return matchesCourse && matchesSearch;
+    })
+    .sort((a, b) => {
+      const da = new Date(a.enrolled_at).getTime();
+      const db = new Date(b.enrolled_at).getTime();
+      return enrollmentSort === 'date_asc' ? da - db : db - da;
+    });
 
   const handleDeleteEnrollment = async (enrollmentId: number) => {
     if (!confirm('Remove this enrollment?')) return;
@@ -180,9 +209,7 @@ export default function AdminStudentsEnrollmentsPage() {
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════
-          STUDENTS SECTION
-      ══════════════════════════════════════════ */}
+      {/* ═══════════════ STUDENTS SECTION ══════════════════ */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold text-black dark:text-white">Students</h2>
       </div>
@@ -194,15 +221,23 @@ export default function AdminStudentsEnrollmentsPage() {
         onImportSuccess={loadStudents}
       />
 
-      {/* Student search */}
-      <div className="mb-4">
+      {/* Student search + sort */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
           value={studentSearch}
           onChange={e => setStudentSearch(e.target.value)}
           placeholder="Search by name, email or student number..."
-          className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
+          className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
         />
+        <select
+          value={studentSort}
+          onChange={e => setStudentSort(e.target.value as StudentSort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-52"
+        >
+          <option value="year_asc">Registration: Earliest first</option>
+          <option value="year_desc">Registration: Latest first</option>
+        </select>
       </div>
 
       <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden mb-12">
@@ -228,7 +263,7 @@ export default function AdminStudentsEnrollmentsPage() {
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Major</th>
-                <th className="px-6 py-4">Year</th>
+                <th className="px-6 py-4">Reg. Year</th>
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
@@ -236,9 +271,7 @@ export default function AdminStudentsEnrollmentsPage() {
               {filteredStudents.map(s => (
                 <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
                   <td className="px-6 py-4 text-sm font-mono text-gray-500">{s.student_number}</td>
-                  <td className="px-6 py-4 font-medium text-black dark:text-white">
-                    {s.first_name} {s.last_name}
-                  </td>
+                  <td className="px-6 py-4 font-medium text-black dark:text-white">{s.first_name} {s.last_name}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{s.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{s.major}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{s.enrollment_year}</td>
@@ -258,9 +291,7 @@ export default function AdminStudentsEnrollmentsPage() {
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════
-          ENROLLMENTS SECTION
-      ══════════════════════════════════════════ */}
+      {/* ═══════════════ ENROLLMENTS SECTION ══════════════════ */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold text-black dark:text-white">Enrollments</h2>
         <button
@@ -278,15 +309,30 @@ export default function AdminStudentsEnrollmentsPage() {
         onImportSuccess={loadEnrollments}
       />
 
-      {/* Course filter for enrollments */}
-      <div className="mb-4">
+      {/* Enrollment search + course filter + sort */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          type="text"
+          value={enrollmentSearch}
+          onChange={e => setEnrollmentSearch(e.target.value)}
+          placeholder="Search by student name or number..."
+          className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
+        />
         <select
           value={filterCourseId}
           onChange={e => setFilterCourseId(e.target.value ? Number(e.target.value) : '')}
-          className="w-full rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500"
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-52"
         >
           <option value="">— All courses —</option>
           {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+        </select>
+        <select
+          value={enrollmentSort}
+          onChange={e => setEnrollmentSort(e.target.value as EnrollmentSort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-52"
+        >
+          <option value="date_desc">Enrolled: Newest first</option>
+          <option value="date_asc">Enrolled: Oldest first</option>
         </select>
       </div>
 
