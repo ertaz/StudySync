@@ -31,6 +31,8 @@ import CourseChatPage from "./components/chat/CourseChatPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import ProfilePage from './pages/Profile/ProfilePage';
 import AdminSettingsPage from "./pages/Admin/AdminSettingsPage";
+import CourseFAQs from "./pages/professor/CourseFAQs";
+import CourseFAQAccordion from "./pages/student/CourseFAQAccordion";
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -99,6 +101,9 @@ const AppRoutes = () => {
       <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
       <Route path="/courses/:id/announcements/edit/:announcementId" element={<EditAnnouncementPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+
+      <Route path="/faqs/:courseId" element={<CourseFAQs />} />
+      <Route path="/faq-accordion/:courseId" element={<CourseFAQAccordion />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>

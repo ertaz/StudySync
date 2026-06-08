@@ -77,17 +77,40 @@ export default function CourseDetailPage() {
         <div className={`h-3 w-full ${getBannerColor(course.id)}`} />
 
         <div className="p-8">
-          {/* Category badge */}
-          {course.category && (
-            <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold text-primary">
-              {course.category.name}
-            </span>
-          )}
+          
+  <div className="flex items-start justify-between gap-4">
+    <div>
+      {course.category && (
+        <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold text-primary">
+          {course.category.name}
+        </span>
+      )}
 
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-black dark:text-white leading-tight">
-            {course.title}
-          </h1>
+      <h1 className="text-3xl font-bold text-black dark:text-white leading-tight">
+        {course.title}
+      </h1>
+    </div>
+
+    <div className="flex gap-2">
+      {(user?.role === 'admin' || user?.role === 'professor') && (
+        <button
+          onClick={() => navigate(`/faqs/${id}`)}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+        >
+          Manage FAQs
+        </button>
+      )}
+
+      {user?.role === 'student' && (
+        <button
+          onClick={() => navigate(`/faq-accordion/${id}`)}
+          className="inline-flex items-center gap-2 rounded-xl border border-blue-600 px-5 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+        >
+          View FAQs
+        </button>
+      )}
+    </div>
+  </div>
 
           {/* Meta row */}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500">
