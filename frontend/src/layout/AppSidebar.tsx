@@ -39,15 +39,10 @@ const navItems: NavItem[] = [
     name: "Assignments",
     subItems: [
       { name: "All Assignments",  path: "/assignments" },
-      
-      { name: "Dynamic Report",   path: "/dynamic-report" },  // ← NEW
+      { name: "Dynamic Report",   path: "/dynamic-report" },
     ],
   },
-  {
-    icon: <CalenderIcon />,
-    name: "Calendar",
-    path: "/calendar",
-  },
+ 
   {
     icon: <UserCircleIcon />,
     name: "Profile",
@@ -55,34 +50,7 @@ const navItems: NavItem[] = [
   },
 ];
 
-const othersItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Charts",
-    subItems: [
-      { name: "Line Chart", path: "/line-chart" },
-      { name: "Bar Chart",  path: "/bar-chart" },
-    ],
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "UI Elements",
-    subItems: [
-      { name: "Alerts",  path: "/alerts" },
-      { name: "Buttons", path: "/buttons" },
-      { name: "Images",  path: "/images" },
-      { name: "Videos",  path: "/videos" },
-    ],
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Authentication",
-    subItems: [
-      { name: "Sign In", path: "/signin" },
-      { name: "Sign Up", path: "/signup" },
-    ],
-  },
-];
+
 
 const ShieldIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -110,22 +78,6 @@ const AppSidebar: React.FC = () => {
     (path: string) => location.pathname === path,
     [location.pathname]
   );
-
-  useEffect(() => {
-    let found = false;
-    ["main", "others"].forEach((menuType) => {
-      const items = menuType === "main" ? navItems : othersItems;
-      items.forEach((nav, index) => {
-        nav.subItems?.forEach((sub) => {
-          if (isActive(sub.path)) {
-            setOpenSubmenu({ type: menuType as "main" | "others", index });
-            found = true;
-          }
-        });
-      });
-    });
-    if (!found) setOpenSubmenu(null);
-  }, [location, isActive]);
 
   useEffect(() => {
     if (!openSubmenu) return;
@@ -198,8 +150,8 @@ const AppSidebar: React.FC = () => {
             >
               <ul className="ml-9 mt-2 space-y-1">
                 {item.subItems.map(sub => {
-                  // MOS I SHFAQ STUDENTIT DINAMIC REPORT NE SIDEBAR
-                  if (sub.name === "Dynamic Report" && user?.role === "student") {
+                  // Fshih "Dynamic Report" per student dhe admin
+                  if (sub.name === "Dynamic Report" && (user?.role === "student" || user?.role === "admin")) {
                     return null;
                   }
 
@@ -216,7 +168,7 @@ const AppSidebar: React.FC = () => {
                         {sub.name}
                         {sub.name === "Dynamic Report" && (
                           <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wide">
-                            New
+                            
                           </span>
                         )}
                       </Link>
@@ -282,11 +234,7 @@ const AppSidebar: React.FC = () => {
             </div>
           )}
 
-          <h2 className="mb-4 mt-6 text-xs text-gray-400">OTHERS</h2>
-          {renderItems(othersItems, "others")}
         </nav>
-
-        {(isExpanded || isHovered || isMobileOpen) && <SidebarWidget />}
       </div>
     </aside>
   );
