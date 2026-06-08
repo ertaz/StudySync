@@ -226,9 +226,7 @@ export default function CourseFeedbackManagementPage() {
                         Delete
                       </button>
 
-                      <p className="text-xs text-gray-500 text-center mt-2">
-  ℹ️ Only one feedback submission is allowed per course.
-</p> 
+                   
 
                     
                       
