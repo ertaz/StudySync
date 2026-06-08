@@ -58,7 +58,7 @@ interface AssignmentFormState {
   description: string;
   deadline: string;
   maxGrade: string;
-  files: FileList | null;
+  files: File[] | null;
 }
 
 const emptyAssignmentForm = (): AssignmentFormState => ({
@@ -77,6 +77,8 @@ export default function CourseContent({ courseId }: { courseId: number }) {
   const navigate = useNavigate();
   const isProfessor = user?.role === "admin" || user?.role === "professor";
   const isStudent = user?.role === "student";
+  // Admin mund te shiqoje gjithcka por NUK mund te shtoje/editoje/fshije assignments
+  const canManageAssignments = user?.role === "professor";
 
   // ── Sections / Lessons state ──
   const [sections, setSections] = useState<any[]>([]);
@@ -240,7 +242,7 @@ export default function CourseContent({ courseId }: { courseId: number }) {
       formData.append("deadline", assignmentForm.deadline);
       formData.append("max_grade", assignmentForm.maxGrade);
       if (assignmentForm.files) {
-        Array.from(assignmentForm.files).forEach((f) => formData.append("files", f));
+        assignmentForm.files.forEach((f) => formData.append("files", f));
       }
       await createAssignment(formData);
       setCreateAssignmentSectionId(null);
@@ -278,7 +280,7 @@ export default function CourseContent({ courseId }: { courseId: number }) {
       formData.append("max_grade", editAssignmentForm.maxGrade);
       formData.append("section_id", String(editingAssignmentSectionId));
       if (editAssignmentForm.files) {
-        Array.from(editAssignmentForm.files).forEach((f) => formData.append("files", f));
+        editAssignmentForm.files.forEach((f) => formData.append("files", f));
       }
       await updateAssignment(String(editingAssignment.id), formData);
       setEditingAssignment(null);
@@ -583,7 +585,7 @@ export default function CourseContent({ courseId }: { courseId: number }) {
                     <div className="px-6 py-8 text-center text-sm text-gray-400">Loading assignments...</div>
                   ) : assignments.length === 0 ? (
                     <div className="px-6 py-8 text-center text-sm text-gray-400">
-                      No assignments yet.{isProfessor ? " Add one below." : ""}
+                      No assignments yet.{canManageAssignments ? " Add one below." : ""}
                     </div>
                   ) : (
                     assignments.map((assignment) => (
@@ -657,40 +659,43 @@ export default function CourseContent({ courseId }: { courseId: number }) {
                                 👥 Submissions
                               </button>
 
-                              <div className="relative">
-                                <button
-                                  onClick={() =>
-                                    setOpenMenu(
-                                      openMenu.id === assignment.id && openMenu.type === "assignment"
-                                        ? { type: null, id: null }
-                                        : { type: "assignment", id: assignment.id }
-                                    )
-                                  }
-                                  className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700 transition-colors"
-                                >
-                                  ⋮
-                                </button>
-                                {openMenu.type === "assignment" && openMenu.id === assignment.id && (
-                                  <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 shadow-lg rounded-lg w-36 py-1">
-                                    <button
-                                      className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
-                                      onClick={() => openEditAssignment(assignment, sec.id)}
-                                    >
-                                      ✏️ Edit
-                                    </button>
-                                    <button
-                                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                                      onClick={() => {
-                                        setDeleteAssignmentId(assignment.id);
-                                        setDeleteAssignmentSectionId(sec.id);
-                                        setOpenMenu({ type: null, id: null });
-                                      }}
-                                    >
-                                      🗑 Delete
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
+                              {/* Edit/Delete menu: vetem professor, jo admin */}
+                              {canManageAssignments && (
+                                <div className="relative">
+                                  <button
+                                    onClick={() =>
+                                      setOpenMenu(
+                                        openMenu.id === assignment.id && openMenu.type === "assignment"
+                                          ? { type: null, id: null }
+                                          : { type: "assignment", id: assignment.id }
+                                      )
+                                    }
+                                    className="p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-700 transition-colors"
+                                  >
+                                    ⋮
+                                  </button>
+                                  {openMenu.type === "assignment" && openMenu.id === assignment.id && (
+                                    <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 shadow-lg rounded-lg w-36 py-1">
+                                      <button
+                                        className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                                        onClick={() => openEditAssignment(assignment, sec.id)}
+                                      >
+                                        ✏️ Edit
+                                      </button>
+                                      <button
+                                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                        onClick={() => {
+                                          setDeleteAssignmentId(assignment.id);
+                                          setDeleteAssignmentSectionId(sec.id);
+                                          setOpenMenu({ type: null, id: null });
+                                        }}
+                                      >
+                                        🗑 Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </>
                           )}
 
@@ -718,7 +723,8 @@ export default function CourseContent({ courseId }: { courseId: number }) {
                     ))
                   )}
 
-                  {isProfessor && (
+                  {/* "+ New Assignment" button: vetem professor, jo admin */}
+                  {canManageAssignments && (
                     <div className="px-6 py-3 bg-orange-50/50 rounded-b-xl">
                       <button
                         onClick={() => {
@@ -930,6 +936,27 @@ function AssignmentFormFields({
   const set = (key: keyof AssignmentFormState, val: any) =>
     onChange({ ...form, [key]: val });
 
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files || []);
+    const existing = form.files || [];
+    // Shto skedarët e rinj, shmang duplikatet sipas emrit+madhësisë
+    const merged = [...existing];
+    selected.forEach((newFile) => {
+      const exists = merged.some(
+        (f) => f.name === newFile.name && f.size === newFile.size
+      );
+      if (!exists) merged.push(newFile);
+    });
+    set("files", merged);
+    // Reset input-in që të mund të zgjidhet i njëjti skedar sërish
+    e.target.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    const updated = (form.files || []).filter((_, i) => i !== index);
+    set("files", updated.length > 0 ? updated : null);
+  };
+
   return (
     <>
       <div>
@@ -977,9 +1004,26 @@ function AssignmentFormFields({
         <input
           type="file"
           multiple
-          onChange={(e) => set("files", e.target.files)}
+          onChange={handleFiles}
           className="text-sm"
         />
+        {form.files && form.files.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {form.files.map((f, i) => (
+              <li key={i} className="flex items-center justify-between text-xs bg-gray-50 border rounded px-2 py-1">
+                <span className="truncate max-w-xs">{getFileIcon(f.name)} {f.name}</span>
+                <button
+                  type="button"
+                  onClick={() => removeFile(i)}
+                  className="ml-2 text-red-400 hover:text-red-600 flex-shrink-0"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </>
-  );}
+  );
+}

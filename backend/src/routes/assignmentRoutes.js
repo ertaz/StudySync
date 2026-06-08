@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const path = require('path');
 const multer = require('multer');
+const fs = require('fs');
 
 const controller = require('../controllers/assignmentController');
 const submissionController = require('../controllers/submissionController');
@@ -10,9 +11,15 @@ const importController = require('../controllers/assignmentImportController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const { checkEnrolled } = require('../middlewares/enrollmentMiddleware');
 
+// ── Sigurohu qe direktorite ekzistojne ──
+const assignmentUploadDir = path.join(__dirname, '../../uploads/assignments');
+const importUploadDir = path.join(__dirname, '../../uploads/imports');
+if (!fs.existsSync(assignmentUploadDir)) fs.mkdirSync(assignmentUploadDir, { recursive: true });
+if (!fs.existsSync(importUploadDir)) fs.mkdirSync(importUploadDir, { recursive: true });
+
 const storage = multer.diskStorage({
   destination(req, file, cb) {
-    cb(null, 'uploads/assignments');
+    cb(null, assignmentUploadDir);
   },
   filename(req, file, cb) {
     cb(null, Date.now() + '-' + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
@@ -23,7 +30,7 @@ const upload = multer({ storage });
 
 const importStorage = multer.diskStorage({
   destination(req, file, cb) {
-    cb(null, 'uploads/imports');
+    cb(null, importUploadDir);
   },
   filename(req, file, cb) {
     cb(null, Date.now() + '-' + file.originalname);
@@ -102,7 +109,7 @@ router.get(
 router.post(
   '/import',
   authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk krijon/importon
+  authorize('professor'),
   uploadImport.single('file'),
   importController.importAssignments
 );
@@ -186,7 +193,7 @@ router.get('/:id', authenticate, controller.getOne);
 router.post(
   '/',
   authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk krijon
+  authorize('professor'),
   upload.array('files'),
   controller.create
 );
@@ -211,7 +218,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk modifikon
+  authorize('professor'),
   upload.array('files'),
   controller.update
 );
@@ -236,7 +243,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk fshin
+  authorize('professor'),
   controller.remove
 );
 
@@ -264,7 +271,7 @@ router.delete(
 router.delete(
   '/:id/attachments/:fileId',
   authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk fshin attachment
+  authorize('professor'),
   controller.removeAttachment
 );
 
@@ -288,7 +295,7 @@ router.delete(
 router.get(
   '/:assignmentId/submissions',
   authenticate,
-  authorize('admin', 'professor'), // ✅ të dy shohin submissions
+  authorize('admin', 'professor'),
   submissionController.getByAssignment
 );
 
