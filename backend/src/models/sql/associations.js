@@ -16,6 +16,7 @@ const RefreshToken     = require('./RefreshToken');
 const AuditLog         = require('./AuditLog');
 const Permission    = require('./Permission');
 const RolePermission = require('./RolePermission');
+const CourseNote = require('./CourseNote');
 
 // ─────────────────────────────────────────────
 // USER ↔ ROLE
@@ -263,4 +264,35 @@ Permission.belongsToMany(Role, {
   foreignKey: 'permission_id',
   otherKey:   'role_id',
   as:         'roles',
+
+});
+
+CourseNote.belongsTo(User, {
+  foreignKey: 'student_id',
+  as: 'student',
+});
+
+User.hasMany(CourseNote, {
+  foreignKey: 'student_id',
+  as: 'notes',
+});
+
+CourseNote.belongsTo(File, {
+  foreignKey: 'file_id',
+  as: 'file',
+});
+
+File.hasOne(CourseNote, {
+  foreignKey: 'file_id',
+  as: 'courseNote',
+});
+
+Course.hasMany(CourseNote, {
+  foreignKey: 'course_id',
+  as: 'notes',
+});
+
+CourseNote.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
 });
