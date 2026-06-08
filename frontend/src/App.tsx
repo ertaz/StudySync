@@ -30,6 +30,7 @@ import CreateAnnouncementPage from "./pages/CreateAnnouncementsPage";
 import CourseChatPage from "./components/chat/CourseChatPage";
 import EditAnnouncementPage from "./pages/EditAnnouncementPage";
 import ProfilePage from './pages/Profile/ProfilePage';
+import AdminSettingsPage from "./pages/Admin/AdminSettingsPage";
 
 // ── NEW ──────────────────────────────────────────────────────
 import AdminStudentsEnrollmentsPage from "./pages/Admin/AdminStudentsEnrollmentsPage";
@@ -90,6 +91,7 @@ const AppRoutes = () => {
         <Route path="professors"    element={<AdminDashboard />} />
         <Route path="courses"       element={<AdminCoursesPage />} />
         <Route path="students"      element={<AdminStudentsEnrollmentsPage />} />  {/* ← NEW */}
+        <Route path="settings" element={<AdminSettingsPage />} />
       </Route>
       <Route path="/admin/courses/create"   element={<CreateCoursePage />} />
       <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
