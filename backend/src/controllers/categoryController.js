@@ -14,7 +14,7 @@ const create = async (req, res) => {
     const { name, description } = req.body;
     if (!name) return res.status(400).json({ success: false, message: 'Name is required' });
 
-    const category = await categoryService.createCategory(name, description, req.user.id);
+    const category = await categoryService.createCategory(name, description, req.user.id, req.ip); 
     res.status(201).json({ success: true, data: category });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });

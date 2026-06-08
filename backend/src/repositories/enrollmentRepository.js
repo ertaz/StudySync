@@ -27,4 +27,8 @@ const create = (data) => Enrollment.create(data);
 const countByCourse = (course_id) =>
   Enrollment.count({ where: { course_id } });
 
-module.exports = { findByUserAndCourse, findAllByUser, create, countByCourse };
+
+const countByUser = (user_id) =>
+  Enrollment.count({ where: { user_id } });
+
+module.exports = { findByUserAndCourse, findAllByUser, create, countByCourse, countByUser };

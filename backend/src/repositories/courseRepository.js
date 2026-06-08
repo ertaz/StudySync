@@ -26,4 +26,7 @@ const create  = (data)      => Course.create(data);
 const update  = (id, data)  => Course.update(data, { where: { id } });
 const destroy = (id)        => Course.destroy({ where: { id } });
 
-module.exports = { getAll, findById, create, update, destroy };
+const countByCategory = (categoryId) =>
+  Course.count({ where: { category_id: categoryId } });
+
+module.exports = { getAll, findById, create, update, destroy, countByCategory };

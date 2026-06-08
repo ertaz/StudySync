@@ -5,7 +5,7 @@ const enroll = async (req, res) => {
     const userId   = req.user.id;
     const courseId = Number(req.params.courseId);
 
-    const enrollment = await enrollmentService.enrollStudent(userId, courseId);
+    const enrollment = await enrollmentService.enrollStudent(userId, courseId, req.ip); 
     res.status(201).json({ success: true, data: enrollment });
   } catch (err) {
     res.status(err.status || 500).json({ success: false, message: err.message });

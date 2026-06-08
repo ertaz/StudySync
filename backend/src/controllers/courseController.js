@@ -25,9 +25,10 @@ const create = async (req, res) => {
 
     const course = await courseService.createCourse({
       title, description, category_id,
-      professor_id: professor_id || null,   // ← NEW
+      professor_id: professor_id || null,
       uploadedFile: req.file || null,
       userId: req.user.id,
+      ip: req.ip,          // ← ADD
     });
     res.status(201).json({ success: true, data: course });
   } catch (err) {
@@ -43,9 +44,10 @@ const update = async (req, res) => {
     const course = await courseService.updateCourse({
       id: req.params.id,
       title, description, category_id,
-      professor_id: professor_id || null,   // ← NEW
+      professor_id: professor_id || null,
       uploadedFile: req.file || null,
       userId: req.user.id,
+      ip: req.ip,          // ← ADD
     });
     res.json({ success: true, data: course });
   } catch (err) {
@@ -55,7 +57,7 @@ const update = async (req, res) => {
 
 const remove = async (req, res) => {
   try {
-    await courseService.deleteCourse(req.params.id);
+    await courseService.deleteCourse(req.params.id, req.user.id, req.ip); 
     res.json({ success: true, message: 'Course deleted' });
   } catch (err) {
     res.status(err.status || 404).json({ success: false, message: err.message });
