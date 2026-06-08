@@ -53,6 +53,20 @@ const panels: PanelCard[] = [
       </svg>
     ),
   },
+  {
+    title: 'Course Feedback',
+    description: 'Review, moderate and manage student course feedback submissions.',
+    route: '/admin/course-feedback',
+    badge: 'NEW',
+    color: 'from-orange-500 to-red-600',
+    textColor: 'text-orange-600 hover:text-orange-800',
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h6"/>
+        <path d="M17 8l2 2 4-4"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminPanel() {

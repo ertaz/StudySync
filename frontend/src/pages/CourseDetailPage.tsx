@@ -6,6 +6,8 @@ import CourseContent from "../components/course/CourseContent";
 import { useAuth } from '../context/AuthContext';
 import CourseNotesSection
 from "../components/course/CourseNotesSection";
+import CourseFeedbackForm
+from '../components/course/CourseFeedbackForm';  
 
 export default function CourseDetailPage() {
   const { user } = useAuth();
@@ -204,6 +206,14 @@ export default function CourseDetailPage() {
         </div>
       </div>
     )}
+
+     {user?.role === 'student' && (
+  <div className="mt-6">
+    <CourseFeedbackForm
+      courseId={Number(id)}
+    />
+  </div>
+)}
     </div>
       );
     }
