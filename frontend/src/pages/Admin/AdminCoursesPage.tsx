@@ -13,6 +13,10 @@ import {
   importCategoriesData,
 } from '../../api/reportApi';
 
+type CourseSort     = 'az' | 'za';
+type CategorySort   = 'az' | 'za';
+type CatCountFilter = '' | '0' | '1+' | '5+' | '10+';
+
 export default function AdminCoursesPage() {
   const navigate = useNavigate();
 
@@ -28,8 +32,15 @@ export default function AdminCoursesPage() {
   const [catLoading, setCatLoading]     = useState(false);
   const [catError, setCatError]         = useState('');
 
-  // Delete category confirm
-  const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
+  // Course controls
+  const [courseSearch, setCourseSearch]         = useState('');
+  const [filterCategoryId, setFilterCategoryId] = useState<number | ''>('');
+  const [courseSort, setCourseSort]             = useState<CourseSort>('az');
+
+  // Category controls
+  const [catSearch, setCatSearch]           = useState('');
+  const [catSort, setCatSort]               = useState<CategorySort>('az');
+  const [catCountFilter, setCatCountFilter] = useState<CatCountFilter>('');
 
   const load = async () => {
     setLoading(true); setLoadError('');
@@ -64,6 +75,40 @@ export default function AdminCoursesPage() {
     setCourses(prev => prev.filter(c => c.id !== id));
   };
 
+  // Derived: filtered + sorted courses
+  const filteredCourses = courses
+    .filter(course => {
+      const matchesSearch = !courseSearch ||
+        `${course.title} ${course.description ?? ''} ${course.professor?.first_name ?? ''} ${course.professor?.last_name ?? ''}`
+          .toLowerCase().includes(courseSearch.toLowerCase());
+      const matchesCategory = !filterCategoryId || course.category_id === filterCategoryId;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      const cmp = a.title.localeCompare(b.title);
+      return courseSort === 'az' ? cmp : -cmp;
+    });
+
+  // Derived: filtered + sorted categories
+  const filteredCategories = categories
+    .filter(cat => {
+      const matchesSearch = !catSearch ||
+        `${cat.name} ${cat.description ?? ''}`
+          .toLowerCase().includes(catSearch.toLowerCase());
+      const count = courses.filter(c => c.category_id === cat.id).length;
+      const matchesCount =
+        catCountFilter === ''    ? true :
+        catCountFilter === '0'   ? count === 0 :
+        catCountFilter === '1+'  ? count >= 1 :
+        catCountFilter === '5+'  ? count >= 5 :
+        catCountFilter === '10+' ? count >= 10 : true;
+      return matchesSearch && matchesCount;
+    })
+    .sort((a, b) => {
+      const cmp = a.name.localeCompare(b.name);
+      return catSort === 'az' ? cmp : -cmp;
+    });
+
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6">
 
@@ -91,6 +136,7 @@ export default function AdminCoursesPage() {
         </button>
       </div>
 
+      {/* Error banner */}
       {loadError && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
           ⚠️ {loadError}
@@ -98,13 +144,42 @@ export default function AdminCoursesPage() {
         </div>
       )}
 
-      {/* ── Courses import/export ── */}
+      {/* Courses import/export */}
       <ImportExportBar
         label="Courses"
         onExport={exportCoursesData}
         onImport={importCoursesData}
         onImportSuccess={load}
       />
+
+      {/* Course search + category filter + sort */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          type="text"
+          value={courseSearch}
+          onChange={e => setCourseSearch(e.target.value)}
+          placeholder="Search by title, description or professor..."
+          className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
+        />
+        <select
+          value={filterCategoryId}
+          onChange={e => setFilterCategoryId(e.target.value ? Number(e.target.value) : '')}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-48"
+        >
+          <option value="">All Categories</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+        <select
+          value={courseSort}
+          onChange={e => setCourseSort(e.target.value as CourseSort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-40"
+        >
+          <option value="az">Title: A → Z</option>
+          <option value="za">Title: Z → A</option>
+        </select>
+      </div>
 
       {/* Courses table */}
       <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden mb-10">
@@ -116,11 +191,15 @@ export default function AdminCoursesPage() {
             </svg>
             Loading courses...
           </div>
-        ) : courses.length === 0 ? (
+        ) : filteredCourses.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
             <span className="text-5xl">📚</span>
-            <p className="text-base font-medium text-gray-500 dark:text-gray-400">No courses yet</p>
-            <p className="text-sm">Click <strong>+ New Course</strong> to create your first one</p>
+            <p className="text-base font-medium text-gray-500 dark:text-gray-400">
+              {courseSearch || filterCategoryId ? 'No courses match your search' : 'No courses yet'}
+            </p>
+            {!courseSearch && !filterCategoryId && (
+              <p className="text-sm">Click <strong>+ New Course</strong> to create your first one</p>
+            )}
           </div>
         ) : (
           <table className="w-full table-auto">
@@ -135,7 +214,7 @@ export default function AdminCoursesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stroke dark:divide-strokedark">
-              {courses.map(course => {
+              {filteredCourses.map(course => {
                 const thumbUrl = getThumbnailUrl(course.thumbnail?.file_path);
                 return (
                   <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
@@ -201,9 +280,7 @@ export default function AdminCoursesPage() {
         )}
       </div>
 
-      {/* ═══════════════════════════════════════════
-          CATEGORIES SECTION (below courses)
-      ══════════════════════════════════════════ */}
+      {/* ═══════════ CATEGORIES SECTION ═══════════ */}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-black dark:text-white">Categories</h2>
@@ -225,12 +302,44 @@ export default function AdminCoursesPage() {
         onImportSuccess={load}
       />
 
+      {/* Category search + course-count filter + sort */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          type="text"
+          value={catSearch}
+          onChange={e => setCatSearch(e.target.value)}
+          placeholder="Search categories by name or description..."
+          className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
+        />
+        <select
+          value={catCountFilter}
+          onChange={e => setCatCountFilter(e.target.value as CatCountFilter)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-48"
+        >
+          <option value="">All (any course count)</option>
+          <option value="0">Empty (0 courses)</option>
+          <option value="1+">Has courses (1+)</option>
+          <option value="5+">5+ courses</option>
+          <option value="10+">10+ courses</option>
+        </select>
+        <select
+          value={catSort}
+          onChange={e => setCatSort(e.target.value as CategorySort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-40"
+        >
+          <option value="az">Name: A → Z</option>
+          <option value="za">Name: Z → A</option>
+        </select>
+      </div>
+
       {/* Categories table */}
       <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark overflow-hidden">
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-3 text-gray-400">
             <span className="text-4xl">🏷️</span>
-            <p className="text-sm font-medium text-gray-500">No categories yet</p>
+            <p className="text-sm font-medium text-gray-500">
+              {catSearch || catCountFilter ? 'No categories match your search' : 'No categories yet'}
+            </p>
           </div>
         ) : (
           <table className="w-full table-auto">
@@ -242,7 +351,7 @@ export default function AdminCoursesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stroke dark:divide-strokedark">
-              {categories.map(cat => {
+              {filteredCategories.map(cat => {
                 const courseCount = courses.filter(c => c.category_id === cat.id).length;
                 return (
                   <tr key={cat.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">

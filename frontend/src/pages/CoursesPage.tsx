@@ -10,6 +10,8 @@ import {
 import { fetchMyEnrollments, enrollInCourse } from '../api/enrollmentApi';
 import { useAuth } from '../context/AuthContext';
 
+type SortOption = 'az' | 'za';
+
 export default function CoursesPage() {
   const { user } = useAuth();
 
@@ -18,6 +20,7 @@ export default function CoursesPage() {
   const [enrolledIds, setEnrolledIds] = useState<Set<number>>(new Set());
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<SortOption>('az');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,17 +45,24 @@ export default function CoursesPage() {
     }
   };
 
-  const filtered = courses.filter((c) => {
-    const matchesCat =
-      activeCategory === null || c.category_id === activeCategory;
+  const filtered = courses
+    .filter((c) => {
+      const matchesCat =
+        activeCategory === null || c.category_id === activeCategory;
 
-    const matchesSearch =
-      !search.trim() ||
-      c.title.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description || '').toLowerCase().includes(search.toLowerCase());
+      const matchesSearch =
+        !search.trim() ||
+        c.title.toLowerCase().includes(search.toLowerCase()) ||
+        (c.description || '').toLowerCase().includes(search.toLowerCase()) ||
+        (`${c.professor?.first_name ?? ''} ${c.professor?.last_name ?? ''}`)
+          .toLowerCase().includes(search.toLowerCase());
 
-    return matchesCat && matchesSearch;
-  });
+      return matchesCat && matchesSearch;
+    })
+    .sort((a, b) => {
+      const cmp = a.title.localeCompare(b.title);
+      return sort === 'az' ? cmp : -cmp;
+    });
 
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6">
@@ -65,15 +75,25 @@ export default function CoursesPage() {
         </p>
       </div>
 
-      {/* Search + category filter */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+      {/* Search + sort + category filter */}
+      <div className="mb-6 flex flex-wrap gap-4 items-center">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search courses..."
+          placeholder="Search by title, description or professor..."
           className="flex-1 rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm text-black dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-primary"
         />
+
+        {/* Sort toggle */}
+        <select
+          value={sort}
+          onChange={e => setSort(e.target.value as SortOption)}
+          className="rounded-lg border border-stroke bg-white px-4 py-2.5 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-primary sm:w-40"
+        >
+          <option value="az">Sort: A → Z</option>
+          <option value="za">Sort: Z → A</option>
+        </select>
 
         <div className="flex flex-wrap gap-2">
           <button
