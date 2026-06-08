@@ -14,16 +14,51 @@ import {
   importProfessorsData,
 } from '../../api/reportApi';
 
-interface Professor {
-  id:                  number;
-  first_name:          string;
-  last_name:           string;
-  email:               string;
-  title?:              string;
-  department?:         string;
-  years_of_experience?: number;
-  phone_number?:       string;
+// Backend returns profile fields nested under the Sequelize association alias.
+// Sequelize may serialize it as professorProfile, ProfessorProfile, or professor_profile
+// depending on version — handle all variants.
+interface RawProfessor {
+  id:         number;
+  first_name: string;
+  last_name:  string;
+  email:      string;
+  professorProfile?:  { title?: string; department?: string; years_of_experience?: number; phone_number?: string; };
+  ProfessorProfile?:  { title?: string; department?: string; years_of_experience?: number; phone_number?: string; };
+  professor_profile?: { title?: string; department?: string; years_of_experience?: number; phone_number?: string; };
 }
+
+// Flat shape used throughout the UI
+interface Professor {
+  id:                   number;
+  first_name:           string;
+  last_name:            string;
+  email:                string;
+  title?:               string;
+  department?:          string;
+  years_of_experience?: number;
+  phone_number?:        string;
+}
+
+// Flatten nested Sequelize response into the flat Professor shape
+const flatten = (raw: RawProfessor): Professor => {
+  const profile =
+    raw.professorProfile ??
+    raw.ProfessorProfile ??
+    raw.professor_profile ??
+    {};
+  return {
+    id:                  raw.id,
+    first_name:          raw.first_name,
+    last_name:           raw.last_name,
+    email:               raw.email,
+    title:               profile.title,
+    department:          profile.department,
+    years_of_experience: profile.years_of_experience,
+    phone_number:        profile.phone_number,
+  };
+};
+
+type YearsSort = 'none' | 'high' | 'low';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -32,14 +67,20 @@ export default function AdminDashboard() {
   const [loading, setLoading]       = useState(true);
   const [loadError, setLoadError]   = useState('');
 
-  const [showCreate, setShowCreate]           = useState(false);
-  const [editProf, setEditProf]               = useState<Professor | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editProf, setEditProf]     = useState<Professor | null>(null);
+
+  // Search + sort state
+  const [professorSearch, setProfessorSearch] = useState('');
+  const [yearsSort, setYearsSort]             = useState<YearsSort>('none');
 
   const load = async () => {
     setLoading(true); setLoadError('');
     try {
       const data = await getAllProfessorsAPI();
-      setProfessors(data.professors || []);
+      const raw: RawProfessor[] = data.professors || [];
+      console.log('[AdminDashboard] raw professor sample:', raw[0]); // ← remove after confirming
+      setProfessors(raw.map(flatten));
     } catch (err: any) {
       setLoadError(err?.response?.data?.message || 'Failed to load professors.');
     } finally { setLoading(false); }
@@ -56,6 +97,26 @@ export default function AdminDashboard() {
       alert(err?.response?.data?.message || 'Failed to delete professor.');
     }
   };
+
+  // Derived filtered + sorted list
+  const filteredProfessors = professors
+    .filter(p => {
+      if (!professorSearch) return true;
+      return `${p.first_name} ${p.last_name} ${p.email} ${p.title ?? ''} ${p.department ?? ''}`
+        .toLowerCase()
+        .includes(professorSearch.toLowerCase());
+    })
+    .sort((a, b) => {
+      if (yearsSort === 'none') {
+        // default: A → Z by last name
+        return `${a.last_name} ${a.first_name}`
+          .toLowerCase()
+          .localeCompare(`${b.last_name} ${b.first_name}`.toLowerCase());
+      }
+      const yA = a.years_of_experience ?? -1;
+      const yB = b.years_of_experience ?? -1;
+      return yearsSort === 'high' ? yB - yA : yA - yB;
+    });
 
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6">
@@ -94,13 +155,32 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Import / Export bar */}
       <ImportExportBar
         label="Professors"
         onExport={exportProfessorsData}
         onImport={importProfessorsData}
         onImportSuccess={load}
       />
+
+      {/* Search + years-of-experience sort */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+        <input
+          type="text"
+          value={professorSearch}
+          onChange={e => setProfessorSearch(e.target.value)}
+          placeholder="Search by name, email, title or department..."
+          className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
+        />
+        <select
+          value={yearsSort}
+          onChange={e => setYearsSort(e.target.value as YearsSort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-56"
+        >
+          <option value="none">Sort: Default (A–Z)</option>
+          <option value="high">Experience: High → Low</option>
+          <option value="low">Experience: Low → High</option>
+        </select>
+      </div>
 
       {/* Error */}
       {loadError && (
@@ -120,11 +200,15 @@ export default function AdminDashboard() {
             </svg>
             Loading professors...
           </div>
-        ) : professors.length === 0 ? (
+        ) : filteredProfessors.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
             <span className="text-5xl">👨‍🏫</span>
-            <p className="text-base font-medium text-gray-500">No professors yet</p>
-            <p className="text-sm">Click <strong>+ New Professor</strong> or import a file above</p>
+            <p className="text-base font-medium text-gray-500">
+              {professorSearch ? 'No professors match your search' : 'No professors yet'}
+            </p>
+            {!professorSearch && (
+              <p className="text-sm">Click <strong>+ New Professor</strong> or import a file above</p>
+            )}
           </div>
         ) : (
           <table className="w-full table-auto">
@@ -139,12 +223,10 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stroke dark:divide-strokedark">
-              {professors.map(p => (
+              {filteredProfessors.map(p => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-meta-4 transition">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-black dark:text-white">
-                      {p.first_name} {p.last_name}
-                    </div>
+                    <div className="font-medium text-black dark:text-white">{p.first_name} {p.last_name}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{p.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{p.title || '—'}</td>
@@ -185,7 +267,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Edit modal */}
+      {/* Edit modal — uses onClose to match EditProfessorModalProps */}
       {editProf && (
         <EditProfessorModal
           professor={editProf}
