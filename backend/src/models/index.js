@@ -26,6 +26,7 @@ const CourseFeedback =
 
 const FaqCategory = require('./sql/FaqCategory');
 const CourseFaq   = require('./sql/CourseFaq');
+const ContactMessage = require('./sql/ContactMessage');
 
 
 
@@ -60,6 +61,7 @@ const db = {
   CourseFeedback,
   FaqCategory,
   CourseFaq,
+  ContactMessage,
 };
 
 module.exports = db;
