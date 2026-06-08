@@ -1,9 +1,10 @@
 const sequelize = require('../config/db');
 
+// ── Models ─────────────────────────────
 const User             = require('./sql/User');
 const Role             = require('./sql/Role');
 const UserRole         = require('./sql/UserRole');
-const Permission       = require('./sql/Permission'); 
+const Permission       = require('./sql/Permission');
 const RolePermission   = require('./sql/RolePermission');
 const RefreshToken     = require('./sql/RefreshToken');
 const StudentProfile   = require('./sql/StudentProfile');
@@ -17,11 +18,15 @@ const Category         = require('./sql/Category');
 const Enrollment       = require('./sql/Enrollment');
 const Assignment       = require('./sql/Assignment');
 const Submission       = require('./sql/Submission');
-const SubmissionFile   = require('./sql/SubmissionFile');   
-const Announcement     = require('./sql/Announcement'); 
+const SubmissionFile   = require('./sql/SubmissionFile');
+const Announcement     = require('./sql/Announcement');
+const CourseNote = require('./sql/CourseNote');
 
+
+// ⚠️ IMPORTANT: associations must run AFTER all models are loaded
 require('./sql/associations');
 
+// ── DB object ───────────────────────────
 const db = {
   sequelize,
   Sequelize: require('sequelize'),
@@ -29,7 +34,7 @@ const db = {
   User,
   Role,
   UserRole,
-  Permission,    
+  Permission,
   RolePermission,
   RefreshToken,
   StudentProfile,
@@ -43,8 +48,9 @@ const db = {
   Enrollment,
   Assignment,
   Submission,
-  SubmissionFile, 
+  SubmissionFile,
   Announcement,
+  CourseNote,
 };
 
 module.exports = db;

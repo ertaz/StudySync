@@ -22,6 +22,10 @@ const profileRoutes = require('./routes/profileRoutes');
 const studentRoutes    = require('./routes/studentRoutes');
 const professorRoutes  = require('./routes/professorRoutes');
 const reportRoutes     = require('./routes/reportRoutes');
+const courseNoteRoutes =
+  require('./routes/courseNoteRoutes');
+
+
 
 const swaggerUi   = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
@@ -36,6 +40,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
 
 // Swagger
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
@@ -56,6 +61,10 @@ app.use('/api/submissions',            submissionRoutes);
 app.use('/api/announcements',          announcementRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
+app.use(
+  '/api/course-notes',
+  courseNoteRoutes
+);
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 app.use('/api/students',               studentRoutes);    // export/import students
