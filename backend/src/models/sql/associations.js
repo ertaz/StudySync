@@ -19,6 +19,10 @@ const RolePermission = require('./RolePermission');
 const CourseNote = require('./CourseNote');
 const CourseFeedback =
   require('./CourseFeedback');
+
+const CourseFaq   = require('./CourseFaq');
+const FaqCategory = require('./FaqCategory');
+
 // ─────────────────────────────────────────────
 // USER ↔ ROLE
 // ─────────────────────────────────────────────
@@ -316,5 +320,28 @@ User.hasMany(CourseFeedback, {
 CourseFeedback.belongsTo(User, {
   foreignKey: 'student_id',
   as: 'student',
+});
+
+
+// ─────────────────────────────────────────────
+// COURSE ↔ FAQ
+// ─────────────────────────────────────────────
+CourseFaq.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as:         'course',
+});
+Course.hasMany(CourseFaq, {
+  foreignKey: 'course_id',
+  as:         'faqs',
+  onDelete:   'CASCADE',
+});
+
+CourseFaq.belongsTo(FaqCategory, {
+  foreignKey: 'faqcategory_id',
+  as:         'category',
+});
+FaqCategory.hasMany(CourseFaq, {
+  foreignKey: 'faqcategory_id',
+  as:         'faqs',
 });
 

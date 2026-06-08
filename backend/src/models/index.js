@@ -24,8 +24,12 @@ const CourseNote = require('./sql/CourseNote');
 const CourseFeedback =
   require('./sql/CourseFeedback');
 
+const FaqCategory = require('./sql/FaqCategory');
+const CourseFaq   = require('./sql/CourseFaq');
 
-// ⚠️ IMPORTANT: associations must run AFTER all models are loaded
+
+
+// IMPORTANT: associations must run AFTER all models are loaded
 require('./sql/associations');
 
 // ── DB object ───────────────────────────
@@ -53,7 +57,9 @@ const db = {
   SubmissionFile,
   Announcement,
   CourseNote,
-  CourseFeedback
+  CourseFeedback,
+  FaqCategory,
+  CourseFaq,
 };
 
 module.exports = db;

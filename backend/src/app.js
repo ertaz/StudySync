@@ -18,6 +18,7 @@ const announcementRoutes    = require('./routes/announcementRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const settingRoutes = require('./routes/settingRoutes');
+const faqRoutes = require('./routes/faqRoutes');
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 const studentRoutes    = require('./routes/studentRoutes');
@@ -67,7 +68,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/course-notes', courseNoteRoutes);
 app.use('/api/course-feedback',courseFeedbackRoutes);
 app.use('/api/settings', settingRoutes);
-
+app.use('/api/faqs', faqRoutes);
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 app.use('/api/students',               studentRoutes);    // export/import students
