@@ -43,6 +43,8 @@ import AssignmentSubs from "./pages/professor/AssignmentSubs";
 import Stats          from "./pages/professor/Stats";
 import DataTools      from "./pages/professor/DataTools";
 import SubmissionForm from "./pages/student/SubmissionForm";
+import CourseFeedbackManagementPage
+from './pages/Admin/CourseFeedbackManagementPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -123,6 +125,12 @@ const AppRoutes = () => {
         <Route path="/stats"               element={<Stats />} />
         <Route path="/data-tools"          element={<DataTools />} />
         <Route path="/courses/:id/chat" element={<CourseChatPage />} />
+        <Route
+  path="/admin/course-feedback"
+  element={
+    <CourseFeedbackManagementPage />
+  }
+/>
         
         {/* MBROJTJA NGA STUDENTI (Nëse është student, e kthen në / ) */}
         <Route 
