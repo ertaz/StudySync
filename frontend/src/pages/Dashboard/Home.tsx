@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { useAuth } from "../../context/AuthContext";
 
 const features = [
   {
@@ -54,8 +55,7 @@ const steps = [
 
 export default function Home() {
   const navigate = useNavigate();
-
-
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans">
@@ -80,7 +80,6 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
             <div className="flex-1 text-center lg:text-left">
-
 
               {/* Wordmark */}
               <h1 className="text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-none tracking-tight text-gray-900 dark:text-white mb-4">
@@ -133,15 +132,13 @@ export default function Home() {
             {/* Right — illustration card */}
             <div className="flex-1 w-full max-w-md lg:max-w-none">
               <div className="relative">
-                {/* Replace with Image */}
-                  <div className="relative w-full h-full flex items-center justify-center">
-                    <img
-                      src="/images/icons/Icon-right.png"
-                      alt="StudySync Illustration"
-                      className="w-full max-w-md object-contain"
-                    />
-                  </div>
-                  
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img
+                    src="/images/icons/Icon-right.png"
+                    alt="StudySync Illustration"
+                    className="w-full max-w-md object-contain"
+                  />
+                </div>
               </div>
             </div>
 
@@ -227,23 +224,44 @@ export default function Home() {
             <p className="text-blue-100 max-w-md mx-auto mb-8 text-base">
               Browse our full catalogue and start your first lesson today.
             </p>
-            <button
-              onClick={() => navigate("/courses")}
-              className="
-                inline-flex items-center gap-2
-                px-7 py-3.5 rounded-xl
-                bg-white text-blue-700 font-semibold text-sm
-                hover:bg-blue-50 active:scale-[0.98]
-                shadow-lg shadow-black/10
-                transition-all duration-200
-              "
-            >
-              <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-              </svg>
-              Browse All Courses
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => navigate("/courses")}
+                className="
+                  inline-flex items-center justify-center gap-2
+                  px-7 py-3.5 rounded-xl
+                  bg-white text-blue-700 font-semibold text-sm
+                  hover:bg-blue-50 active:scale-[0.98]
+                  shadow-lg shadow-black/10
+                  transition-all duration-200
+                "
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                  <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                </svg>
+                Browse All Courses
+              </button>
+
+              {user?.role === 'student' && (
+                <button
+                  onClick={() => navigate("/contact")}
+                  className="
+                    inline-flex items-center justify-center gap-2
+                    px-7 py-3.5 rounded-xl
+                    bg-white/10 hover:bg-white/20 text-white font-semibold text-sm
+                    border border-white/30
+                    active:scale-[0.98]
+                    transition-all duration-200
+                  "
+                >
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Contact Us
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
