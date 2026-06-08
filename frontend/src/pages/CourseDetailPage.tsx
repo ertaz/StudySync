@@ -4,11 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchCourseById, Course } from '../api/courseApi';
 import CourseContent from "../components/course/CourseContent";
 import { useAuth } from '../context/AuthContext';
+import CourseNotesSection
+from "../components/course/CourseNotesSection";
 
 export default function CourseDetailPage() {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showNotes, setShowNotes] = useState(false);
 
   const [course, setCourse]   = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
@@ -121,6 +124,56 @@ export default function CourseDetailPage() {
       
 
      {<CourseContent courseId={Number(id)} />}
+
+    {/* NOTES BUTTON + DRAWER */}
+{user?.role !== "professor" && (
+  <>
+    {/* OPEN BUTTON */}
+    <div className="mt-6 flex justify-end">
+  <button
+    onClick={() => setShowNotes(true)}
+    className="flex items-center gap-2 bg-green-600 text-white px-5 py-2 rounded-full hover:bg-green-700 transition"
+  >
+    📒 Open Notes
+  </button>
+</div>
+
+    {/* DRAWER */}
+    {showNotes && (
+  <div className="fixed inset-0 bg-black/40 flex justify-end z-50 pt-20">
+
+        <div className="w-full max-w-2xl bg-white h-full shadow-xl flex flex-col">
+
+          {/* HEADER */}
+          <div className="flex justify-between items-center p-4 border-b">
+            <h2 className="font-semibold text-lg">Course Notes</h2>
+
+            {/* X BUTTON */}
+            <button
+              onClick={() => setShowNotes(false)}
+              className="text-gray-600 hover:text-red-500 text-xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* CONTENT */}
+          <div className="p-4 overflow-y-auto">
+
+            {/* WE INLINE YOUR NOTES HERE WITH PREVIEW FIX */}
+            <CourseNotesSection
+              courseId={Number(id)}
+              renderCompact
+            />
+
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+)}
+ 
+     
         
      </div>
     {user?.role !== 'professor' && (
@@ -154,6 +207,8 @@ export default function CourseDetailPage() {
     </div>
       );
     }
+
+    
     
 // Picks a consistent top-banner colour based on the course id
 function getBannerColor(id: number): string {
