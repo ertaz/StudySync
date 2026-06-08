@@ -21,6 +21,8 @@ const Submission       = require('./sql/Submission');
 const SubmissionFile   = require('./sql/SubmissionFile');
 const Announcement     = require('./sql/Announcement');
 const CourseNote = require('./sql/CourseNote');
+const CourseFeedback =
+  require('./sql/CourseFeedback');
 
 
 // ⚠️ IMPORTANT: associations must run AFTER all models are loaded
@@ -51,6 +53,7 @@ const db = {
   SubmissionFile,
   Announcement,
   CourseNote,
+  CourseFeedback
 };
 
 module.exports = db;

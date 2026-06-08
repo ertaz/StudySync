@@ -17,7 +17,8 @@ const AuditLog         = require('./AuditLog');
 const Permission    = require('./Permission');
 const RolePermission = require('./RolePermission');
 const CourseNote = require('./CourseNote');
-
+const CourseFeedback =
+  require('./CourseFeedback');
 // ─────────────────────────────────────────────
 // USER ↔ ROLE
 // ─────────────────────────────────────────────
@@ -296,3 +297,24 @@ CourseNote.belongsTo(Course, {
   foreignKey: 'course_id',
   as: 'course',
 });
+
+Course.hasMany(CourseFeedback, {
+  foreignKey: 'course_id',
+  as: 'feedbacks',
+});
+
+CourseFeedback.belongsTo(Course, {
+  foreignKey: 'course_id',
+  as: 'course',
+});
+
+User.hasMany(CourseFeedback, {
+  foreignKey: 'student_id',
+  as: 'feedbacks',
+});
+
+CourseFeedback.belongsTo(User, {
+  foreignKey: 'student_id',
+  as: 'student',
+});
+
