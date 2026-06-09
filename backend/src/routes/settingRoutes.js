@@ -1,5 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const express           = require('express');
+const router            = express.Router();
+const settingController = require('../controllers/settingController');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -10,30 +12,17 @@ const router = express.Router();
 
 /**
  * @swagger
- * /api/settings/{key}:
+ * /api/settings:
  *   get:
- *     summary: Merr vlerën e një konfigurimi specifik përmes çelësit (key)
+ *     summary: Merr të gjitha konfigurimet (Admin)
  *     tags: [Settings]
- *     parameters:
- *       - in: path
- *         name: key
- *         required: true
- *         schema:
- *           type: string
- *         description: Çelësi i konfigurimit (p.sh. site_name)
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Sukses
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 key:
- *                   type: string
- *                 value:
- *                   type: string
  */
+router.get('/',     authenticate, authorize('admin'), settingController.getAll);
 
 /**
  * @swagger
@@ -41,6 +30,8 @@ const router = express.Router();
  *   put:
  *     summary: Përditëson vlerën e një konfigurimi
  *     tags: [Settings]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: key
@@ -71,13 +62,6 @@ const router = express.Router();
  *                   type: boolean
  *                   example: true
  */
-
-router.get("/:key", (req, res) => {
-  res.json({});
-});
-
-router.put("/:key", (req, res) => {
-  res.json({ ok: true });
-});
+router.put('/:key', authenticate, authorize('admin'), settingController.update);
 
 module.exports = router;

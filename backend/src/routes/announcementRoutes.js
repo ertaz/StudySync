@@ -34,6 +34,7 @@ const {
  *                   type: boolean
  *                   example: true
  */
+// TEST ROUTE
 router.get("/test", (req, res) => {
   res.json({ ok: true });
 });
@@ -59,6 +60,7 @@ router.get("/test", (req, res) => {
  *       401:
  *         description: I paautorizuar (mungon tokeni)
  */
+// GET by course
 router.get("/course/:courseId", authenticate, getAnnouncementsByCourse);
 
 /**
@@ -98,12 +100,8 @@ router.get("/course/:courseId", authenticate, getAnnouncementsByCourse);
  *       403:
  *         description: Nuk keni privilegje (nuk jeni Admin ose Professor)
  */
-router.post(
-  "/",
-  authenticate,
-  authorize("admin", "professor"),
-  createAnnouncement
-);
+// CREATE
+router.post("/", authenticate, authorize("admin", "professor"), createAnnouncement);
 
 /**
  * @swagger
@@ -143,17 +141,7 @@ router.post(
  *         description: Nuk keni privilegje
  *       404:
  *         description: Njoftimi nuk u gjet
- */
-router.put(
-  "/:id",
-  authenticate,
-  authorize("admin", "professor"),
-  updateAnnouncement
-);
-
-/**
- * @swagger
- * /api/announcements/{id}:
+ *
  *   delete:
  *     summary: Fshin një njoftim
  *     description: Qasja është e lejuar vetëm për rolet admin dhe professor.
@@ -177,11 +165,10 @@ router.put(
  *       404:
  *         description: Njoftimi nuk u gjet
  */
-router.delete(
-  "/:id",
-  authenticate,
-  authorize("admin", "professor"),
-  deleteAnnouncement
-);
+// UPDATE
+router.put("/:id", authenticate, authorize("admin", "professor"), updateAnnouncement);
+
+// DELETE
+router.delete("/:id", authenticate, authorize("admin", "professor"), deleteAnnouncement);
 
 module.exports = router;

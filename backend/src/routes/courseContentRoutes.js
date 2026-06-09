@@ -1,5 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const router = require('express').Router();
+const controller = require('../controllers/courseContentController');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
+const lessonUpload = require("../middlewares/lessonUploadMiddleware");
 
 /**
  * @swagger
@@ -7,6 +9,16 @@ const router = express.Router();
  *   - name: Course Content
  *     description: API për menaxhimin e seksioneve dhe mësimeve të kursit
  */
+
+// Sections
+router.get('/sections/:courseId', authenticate, controller.getSections);
+
+router.post(
+  '/sections',
+  authenticate,
+  authorize('admin', 'professor'),
+  controller.createSection
+);
 
 /**
  * @swagger
@@ -52,13 +64,21 @@ const router = express.Router();
  *       200:
  *         description: Seksioni u fshi me sukses
  */
-router.put("/sections/:id", (req, res) => {
-  res.json({ ok: true });
-});
+router.put(
+  '/sections/:id',
+  authenticate, 
+  authorize('admin', 'professor'),
+  controller.updateSection
+);
 
-router.delete("/sections/:id", (req, res) => {
-  res.json({ ok: true });
-});
+router.delete(
+  '/sections/:id',
+  authenticate,
+  authorize('admin', 'professor'),
+  controller.deleteSection
+);
+
+// Lessons
 
 /**
  * @swagger
@@ -91,9 +111,13 @@ router.delete("/sections/:id", (req, res) => {
  *       201:
  *         description: Mësimi u krijua me sukses
  */
-router.post("/lessons", (req, res) => {
-  res.json({ ok: true });
-});
+router.post(
+  "/lessons",
+  authenticate,
+  authorize("admin", "professor"),
+  lessonUpload.single("file"),
+  controller.createLesson
+);
 
 /**
  * @swagger
@@ -157,16 +181,19 @@ router.post("/lessons", (req, res) => {
  *       200:
  *         description: Mësimi u fshi me sukses
  */
-router.get("/lessons/:id", (req, res) => {
-  res.json({});
-});
+router.put(
+  "/lessons/:id",
+  authenticate,
+  authorize("admin", "professor"),
+  lessonUpload.single("file"),
+  controller.updateLesson
+);
 
-router.put("/lessons/:id", (req, res) => {
-  res.json({ ok: true });
-});
-
-router.delete("/lessons/:id", (req, res) => {
-  res.json({ ok: true });
-});
+router.delete(
+  '/lessons/:id',
+  authenticate,
+  authorize('admin', 'professor'),
+  controller.deleteLesson
+);
 
 module.exports = router;

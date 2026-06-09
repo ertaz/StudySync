@@ -1,5 +1,7 @@
-const express = require("express");
-const router = express.Router();
+const express    = require('express');
+const router     = express.Router();
+const faqCtrl    = require('../controllers/faqController');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -7,6 +9,8 @@ const router = express.Router();
  *   - name: FAQ
  *     description: API për menaxhimin e pyetjeve të shpeshta dhe kategorive
  */
+
+// ── FAQ Categories (admin only) ───────────────────────────────
 
 /**
  * @swagger
@@ -37,13 +41,8 @@ const router = express.Router();
  *       201:
  *         description: Kategoria u krijua
  */
-router.get("/categories", (req, res) => {
-  res.json([]);
-});
-
-router.post("/categories", (req, res) => {
-  res.json({ ok: true });
-});
+router.get   ('/categories',     authenticate, faqCtrl.getCategories);
+router.post  ('/categories',     authenticate, authorize('admin'), faqCtrl.createCategory);
 
 /**
  * @swagger
@@ -83,13 +82,12 @@ router.post("/categories", (req, res) => {
  *       200:
  *         description: U fshi me sukses
  */
-router.put("/categories/:id", (req, res) => {
-  res.json({ ok: true });
-});
+router.put   ('/categories/:id', authenticate, authorize('admin'), faqCtrl.updateCategory);
+router.delete('/categories/:id', authenticate, authorize('admin'), faqCtrl.deleteCategory);
 
-router.delete("/categories/:id", (req, res) => {
-  res.json({ ok: true });
-});
+// ── Course FAQs ───────────────────────────────────────────────
+// Students, professors, and admins can view
+router.get('/course/:courseId', authenticate, faqCtrl.getFaqsByCourse);
 
 /**
  * @swagger
@@ -128,13 +126,8 @@ router.delete("/categories/:id", (req, res) => {
  *       201:
  *         description: FAQ u krijua me sukses
  */
-router.get("/", (req, res) => {
-  res.json([]);
-});
-
-router.post("/", (req, res) => {
-  res.json({ ok: true });
-});
+// Only admin and professor can create/edit/delete
+router.post  ('/',     authenticate, authorize('admin', 'professor'), faqCtrl.createFaq);
 
 /**
  * @swagger
@@ -176,12 +169,7 @@ router.post("/", (req, res) => {
  *       200:
  *         description: U fshi
  */
-router.put("/:id", (req, res) => {
-  res.json({ ok: true });
-});
-
-router.delete("/:id", (req, res) => {
-  res.json({ ok: true });
-});
+router.put   ('/:id',  authenticate, authorize('admin', 'professor'), faqCtrl.updateFaq);
+router.delete('/:id',  authenticate, authorize('admin', 'professor'), faqCtrl.deleteFaq);
 
 module.exports = router;
