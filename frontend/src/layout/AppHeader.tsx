@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Link } from "react-router";
-import { useSidebar } from "../context/SidebarContext";
+import { useAppSidebar } from "../store/useAppStore";
 import UserDropdown from "../components/header/UserDropdown";
 
 const AppHeader: React.FC = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
 
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  // ── Zustand store (centralized state management) ──────────
+  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useAppSidebar();
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -78,7 +79,6 @@ const AppHeader: React.FC = () => {
                 />
               </svg>
             )}
-            {/* Cross Icon */}
           </button>
 
           <Link to="/" className="lg:hidden">

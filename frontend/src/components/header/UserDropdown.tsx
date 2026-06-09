@@ -3,9 +3,14 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import { useAppUser } from "../../store/useAppStore";
 
 export default function UserDropdown() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
+
+  // ── Zustand store (centralized state management) ──────────
+  const user = useAppUser();
+
   const [isOpen, setIsOpen] = useState(false);
 
   function toggleDropdown() {

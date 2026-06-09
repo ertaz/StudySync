@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import AppLayout     from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+import { ZustandSync } from "./store/ZustandSync";
 
 // ── Static imports (auth + layout kritik) ─────────────────────
 import SignIn   from "./pages/AuthPages/SignIn";
@@ -92,7 +93,7 @@ return (
   position="top-right" 
   reverseOrder={false} 
   containerStyle={{
-    zIndex: 999999, // Një numër 9 më shumë se header-i i ekipit që të dalë sipër tij
+    zIndex: 999999,
   }}
 />
 
@@ -178,6 +179,8 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
+        {/* ZustandSync: sinkronizon AuthContext → Zustand store */}
+        <ZustandSync />
         <ScrollToTop />
         <AppRoutes />
       </AuthProvider>

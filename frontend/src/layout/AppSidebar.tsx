@@ -11,8 +11,7 @@ import {
   EnvelopeIcon,
 } from "../icons";
 
-import { useSidebar } from "../context/SidebarContext";
-import { useAuth } from "../context/AuthContext";
+import { useAppSidebar, useAppUser } from "../store/useAppStore";
 
 type NavItem = {
   name: string;
@@ -71,8 +70,10 @@ const ShieldIcon = () => (
 );
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
-  const { user } = useAuth();
+  // ── Zustand store (centralized state management) ──────────
+  const { isExpanded, isMobileOpen, isHovered, setSidebarHovered } = useAppSidebar();
+  const user = useAppUser();
+
   const location = useLocation();
 
   const [openSubmenu, setOpenSubmenu] = useState<{
@@ -200,8 +201,8 @@ const AppSidebar: React.FC = () => {
       ${isExpanded || isMobileOpen || isHovered ? "w-[290px]" : "w-[90px]"}
       ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
       lg:translate-x-0`}
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isExpanded && setSidebarHovered(true)}
+      onMouseLeave={() => setSidebarHovered(false)}
     >
      {/* LOGO */}
     <div className="flex items-center justify-center px-5 py-7 h-20">
