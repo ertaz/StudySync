@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import { loginAPI, logoutAPI } from '../api/authAPI';
 import { setTokenGetter, setRefreshCallbacks } from '../api/axiosInstance';
 import { disconnectSocket } from '../services/socketService';
+import toast from 'react-hot-toast'; // Imidiatisht i gatshëm për përdorim
 
 interface User {
   id:         number;
@@ -40,6 +41,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Axios reads from the ref so it always gets the latest value
   // without needing a re-render.
   useEffect(() => {
+    // 🔥 ZGJIDHJA GLOBALE: Mbishkruajmë alert-in e shëmtuar të sistemit me Toast-in e bukur
+    window.alert = (message) => {
+      toast.error(message, {
+        duration: 4000,
+        style: {
+          borderRadius: '8px',
+          background: '#ef4444',
+          color: '#fff',
+        },
+      });
+    };
+
     setTokenGetter(() => accessTokenRef.current);
 
     setRefreshCallbacks(
@@ -60,26 +73,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let cancelled = false;
 
-   const restoreSession = async () => {
-  try {
-    const { data } = await axios.post(
-      `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
-      {},
-      { withCredentials: true }
-    );
-    if (!cancelled) {
-      updateToken(data.accessToken);
-      setUser(data.user || null);
-    }
-  } catch {
-    if (!cancelled) {
-      updateToken(null);
-      setUser(null);
-    }
-  } finally {
-    if (!cancelled) setLoading(false);
-  }
-};
+    const restoreSession = async () => {
+      try {
+        const { data } = await axios.post(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
+          {},
+          { withCredentials: true }
+        );
+        if (!cancelled) {
+          updateToken(data.accessToken);
+          setUser(data.user || null);
+        }
+      } catch {
+        if (!cancelled) {
+          updateToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
 
     restoreSession();
     return () => { cancelled = true; };
@@ -92,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(data.user);
   };
 
-   const logout = async () => {
+  const logout = async () => {
     await logoutAPI();
     disconnectSocket();
     updateToken(null);
