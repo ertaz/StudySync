@@ -94,6 +94,18 @@ const panels: PanelCard[] = [
       </svg>
     ),
   },
+  {
+  title: 'Contact Messages',
+  description: 'View and manage messages sent by students through the Contact Us page.',
+  route: '/admin/messages',
+  color: 'from-lime-500 to-green-600',
+  textColor: 'text-lime-600 hover:text-lime-800',
+  icon: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
+},
 ];
 
 export default function AdminPanel() {

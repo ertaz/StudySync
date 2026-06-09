@@ -96,9 +96,10 @@ const AppRoutes = () => {
         <Route path="courses"       element={<AdminCoursesPage />} />
         <Route path="students"      element={<AdminStudentsEnrollmentsPage />} />  {/* ← NEW */}
         <Route path="settings" element={<AdminSettingsPage />} />
+        <Route path="/admin/courses/create"   element={<CreateCoursePage />} />
+        <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
       </Route>
-      <Route path="/admin/courses/create"   element={<CreateCoursePage />} />
-      <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
+      
       <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
       <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
       <Route path="/courses/:id/announcements/edit/:announcementId" element={<EditAnnouncementPage />} />

@@ -14,9 +14,7 @@ import {
   importProfessorsData,
 } from '../../api/reportApi';
 
-// Backend returns profile fields nested under the Sequelize association alias.
-// Sequelize may serialize it as professorProfile, ProfessorProfile, or professor_profile
-// depending on version — handle all variants.
+
 interface RawProfessor {
   id:         number;
   first_name: string;
@@ -58,6 +56,7 @@ const flatten = (raw: RawProfessor): Professor => {
   };
 };
 
+type NameSort  = 'az' | 'za';
 type YearsSort = 'none' | 'high' | 'low';
 
 export default function AdminDashboard() {
@@ -72,6 +71,7 @@ export default function AdminDashboard() {
 
   // Search + sort state
   const [professorSearch, setProfessorSearch] = useState('');
+  const [nameSort, setNameSort]               = useState<NameSort>('az');
   const [yearsSort, setYearsSort]             = useState<YearsSort>('none');
 
   const load = async () => {
@@ -107,15 +107,16 @@ export default function AdminDashboard() {
         .includes(professorSearch.toLowerCase());
     })
     .sort((a, b) => {
-      if (yearsSort === 'none') {
-        // default: A → Z by last name
-        return `${a.last_name} ${a.first_name}`
-          .toLowerCase()
-          .localeCompare(`${b.last_name} ${b.first_name}`.toLowerCase());
+      // First sort by experience if selected
+      if (yearsSort !== 'none') {
+        const yA = a.years_of_experience ?? -1;
+        const yB = b.years_of_experience ?? -1;
+        const expCmp = yearsSort === 'high' ? yB - yA : yA - yB;
+        if (expCmp !== 0) return expCmp;
       }
-      const yA = a.years_of_experience ?? -1;
-      const yB = b.years_of_experience ?? -1;
-      return yearsSort === 'high' ? yB - yA : yA - yB;
+      // Then (or primarily) sort by first name A→Z / Z→A
+      const nameCmp = a.first_name.toLowerCase().localeCompare(b.first_name.toLowerCase());
+      return nameSort === 'az' ? nameCmp : -nameCmp;
     });
 
   return (
@@ -162,7 +163,7 @@ export default function AdminDashboard() {
         onImportSuccess={load}
       />
 
-      {/* Search + years-of-experience sort */}
+      {/* Search + sort controls */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <input
           type="text"
@@ -172,11 +173,19 @@ export default function AdminDashboard() {
           className="flex-1 rounded-lg border border-stroke bg-transparent px-4 py-3 text-sm outline-none focus:border-blue-500 dark:border-strokedark dark:text-white"
         />
         <select
+          value={nameSort}
+          onChange={e => setNameSort(e.target.value as NameSort)}
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-40"
+        >
+          <option value="az">Name: A → Z</option>
+          <option value="za">Name: Z → A</option>
+        </select>
+        <select
           value={yearsSort}
           onChange={e => setYearsSort(e.target.value as YearsSort)}
-          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-56"
+          className="rounded-lg border border-stroke bg-white px-4 py-3 text-sm dark:border-strokedark dark:bg-boxdark dark:text-white outline-none focus:border-blue-500 sm:w-48"
         >
-          <option value="none">Sort: Default (A–Z)</option>
+          <option value="none">Experience: Default</option>
           <option value="high">Experience: High → Low</option>
           <option value="low">Experience: Low → High</option>
         </select>

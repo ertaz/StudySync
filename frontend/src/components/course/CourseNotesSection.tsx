@@ -15,7 +15,6 @@ interface Props {
 
 export default function CourseNotesSection({
   courseId,
-  renderCompact = false,
 }: Props) {
   const { user } = useAuth();
 
@@ -24,7 +23,6 @@ export default function CourseNotesSection({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ NEW: custom delete modal state
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const loadNotes = async () => {
@@ -57,14 +55,11 @@ export default function CourseNotesSection({
     }
   };
 
-  // ✅ FIXED DELETE (no window.confirm)
   const confirmDelete = async () => {
     if (!deleteId) return;
 
     try {
       await deleteCourseNote(deleteId);
-
-      // instant UI update (no reload needed)
       setNotes((prev) => prev.filter((n) => n.id !== deleteId));
     } catch (err) {
       console.error("Delete failed:", err);
@@ -78,132 +73,151 @@ export default function CourseNotesSection({
   ).replace("/api", "");
 
   return (
-    <div className={renderCompact ? "p-2" : "mt-8 rounded-2xl border bg-white p-6"}>
-      {!renderCompact && (
-        <>
-          <h2 className="text-xl font-bold">Student Notes</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Shared notes uploaded by students
-          </p>
-        </>
-      )}
+    <div className="flex flex-col gap-4">
 
-      {/* UPLOAD */}
+      {/* UPLOAD FORM */}
       {user?.role === "student" && (
-        <div className={renderCompact ? "mb-3" : "mb-6 border p-4 rounded-xl"}>
-          <input
-            type="text"
-            placeholder="Note title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border px-3 py-2 mb-3 rounded"
-          />
+        <div className="rounded-xl border border-stroke dark:border-strokedark bg-white dark:bg-boxdark p-5">
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">
+            Upload a Note
+          </h3>
 
-          <input
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.webp"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Note title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full rounded-lg border border-stroke dark:border-strokedark bg-transparent px-3 py-2 text-sm text-black dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
 
-          <button
-            onClick={handleUpload}
-            className="mt-3 bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Upload Note
-          </button>
+            {/* File input styled as a label */}
+            <label className="flex items-center gap-3 w-full cursor-pointer rounded-lg border border-dashed border-stroke dark:border-strokedark px-4 py-3 text-sm text-gray-400 hover:border-blue-400 hover:text-blue-500 transition">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span>{file ? file.name : "Choose file (PDF, PNG, JPG…)"}</span>
+              <input
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              onClick={handleUpload}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
+              disabled={!file || !title.trim()}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload Note
+            </button>
+          </div>
         </div>
       )}
 
-      {/* LIST */}
-      {loading ? (
-        <p>Loading...</p>
-      ) : notes.length === 0 ? (
-        <p className="text-gray-500">No notes yet.</p>
-      ) : (
-        <div className="space-y-3">
-          {notes.map((note) => {
-            const fileUrl = note.file?.file_path
-              ? `${baseUrl}${note.file.file_path}`
-              : "#";
+      {/* NOTES LIST */}
+      <div className="rounded-xl border border-stroke dark:border-strokedark bg-white dark:bg-boxdark p-5">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-4">
+          Shared Notes
+        </h3>
 
-            const isImage =
-              note.file?.file_path?.match(/\.(jpg|jpeg|png|webp)$/i);
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            Loading notes…
+          </div>
+        ) : notes.length === 0 ? (
+          <p className="text-sm text-gray-400 italic py-4">No notes uploaded yet.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {notes.map((note) => {
+              const fileUrl = note.file?.file_path
+                ? `${baseUrl}${note.file.file_path}`
+                : "#";
 
-            const canDelete =
-              user?.role === "admin" || user?.id === note.student_id;
+              const isImage = note.file?.file_path?.match(/\.(jpg|jpeg|png|webp)$/i);
+              const canDelete = user?.role === "admin" || user?.id === note.student_id;
 
-            return (
-              <div
-                key={note.id}
-                className="border p-4 rounded-xl flex justify-between items-center gap-3"
-              >
-                {/* LEFT */}
-                <div className="flex-1">
-                  <h4 className="font-semibold">{note.title}</h4>
+              return (
+                <div
+                  key={note.id}
+                  className="flex items-center gap-4 rounded-xl border border-stroke dark:border-strokedark px-4 py-3"
+                >
+                  {/* Thumbnail */}
+                  <div className="w-12 h-12 flex-shrink-0">
+                    {isImage ? (
+                      <img src={fileUrl} className="w-full h-full object-cover rounded-lg border border-stroke dark:border-strokedark" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center rounded-lg border border-stroke dark:border-strokedark bg-gray-50 dark:bg-white/5">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
 
-                  <p className="text-xs text-gray-500">
-                    Uploaded by {note.student?.first_name} {note.student?.last_name}
-                  </p>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-black dark:text-white truncate">{note.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {note.student?.first_name} {note.student?.last_name}
+                    </p>
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-blue-500 hover:underline mt-0.5 inline-block"
+                    >
+                      Open file →
+                    </a>
+                  </div>
 
-                  <a
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-blue-600 text-xs"
-                  >
-                    Open Note
-                  </a>
-                </div>
-
-                {/* RIGHT PREVIEW */}
-                <div className={renderCompact ? "w-12 h-12" : "w-16 h-16"}>
-                  {isImage ? (
-                    <img
-                      src={fileUrl}
-                      className="w-full h-full object-cover rounded border"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400 border rounded">
-                      PDF
-                    </div>
+                  {/* Delete */}
+                  {canDelete && (
+                    <button
+                      onClick={() => setDeleteId(note.id)}
+                      className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-                {/* DELETE BUTTON */}
-                {canDelete && (
-                  <button
-                    onClick={() => setDeleteId(note.id)}
-                    className="text-red-500 text-sm"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ✅ CUSTOM MODAL (NO LOCALHOST TEXT ANYMORE) */}
+      {/* DELETE MODAL */}
       {deleteId !== null && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl shadow-xl w-[300px]">
-            <h2 className="text-lg font-semibold mb-2">Delete note?</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              This action cannot be undone.
-            </p>
+          <div className="bg-white dark:bg-boxdark rounded-2xl shadow-xl w-[320px] p-6 border border-stroke dark:border-strokedark">
+            <h2 className="text-base font-semibold text-black dark:text-white mb-1">Delete note?</h2>
+            <p className="text-sm text-gray-400 mb-6">This action cannot be undone.</p>
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setDeleteId(null)}
-                className="px-3 py-1 rounded border"
+                className="px-4 py-2 rounded-lg border border-stroke dark:border-strokedark text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition"
               >
                 Cancel
               </button>
-
               <button
                 onClick={confirmDelete}
-                className="px-3 py-1 rounded bg-red-600 text-white"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
               >
                 Delete
               </button>

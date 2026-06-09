@@ -3,18 +3,16 @@ import { Link, useLocation } from "react-router";
 
 import {
   BoxCubeIcon,
-  CalenderIcon,
   ChevronDownIcon,
   GridIcon,
   ListIcon,
-  PieChartIcon,
   PlugInIcon,
   UserCircleIcon,
+  EnvelopeIcon,
 } from "../icons";
 
 import { useSidebar } from "../context/SidebarContext";
 import { useAuth } from "../context/AuthContext";
-import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -24,6 +22,11 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+  {
+  icon: <PlugInIcon />,
+  name: "Home",
+  path: "/",
+},
   {
     icon: <GridIcon />,
     name: "Dashboard",
@@ -48,6 +51,12 @@ const navItems: NavItem[] = [
     name: "Profile",
     path: "/profile",
   },
+
+  {
+  icon: <EnvelopeIcon />,
+  name: "Contact Us",
+  path: "/contact",
+}
 ];
 
 

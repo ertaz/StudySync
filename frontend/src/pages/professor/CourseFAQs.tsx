@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   getCategoriesAPI, getFaqsByCourseAPI,
-  createFaqAPI, updateFaqAPI, deleteFaqAPI,
+  createFaqAPI, deleteFaqAPI,
 } from '../../api/faqAPI';
 
 interface Category { id: number; name: string; }
@@ -23,7 +23,6 @@ export default function CourseFAQs() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [faqs, setFaqs]             = useState<FAQ[]>([]);
   const [form, setForm]             = useState(empty);
-  const [editing, setEditing]       = useState<number | null>(null);
   const [error, setError]           = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
@@ -46,12 +45,7 @@ export default function CourseFAQs() {
     setError('');
     setFormLoading(true);
     try {
-      if (editing !== null) {
-        await updateFaqAPI(editing, form);
-        setEditing(null);
-      } else {
-        await createFaqAPI({ ...form, course_id: cId });
-      }
+      await createFaqAPI({ ...form, course_id: cId });
       setForm(empty);
       load();
     } catch (err) {
@@ -59,12 +53,6 @@ export default function CourseFAQs() {
     } finally {
       setFormLoading(false);
     }
-  };
-
-  const handleEdit = (faq: FAQ) => {
-    setEditing(faq.id);
-    setForm({ faqcategory_id: faq.faqcategory_id, question: faq.question, answer: faq.answer });
-    setError('');
   };
 
   const handleDelete = async (id: number) => {
@@ -115,7 +103,7 @@ export default function CourseFAQs() {
       <div className="rounded-2xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark mb-8">
         <div className="p-6 border-b border-stroke dark:border-strokedark">
           <h2 className="text-lg font-semibold text-black dark:text-white">
-            {editing !== null ? 'Edit FAQ' : 'Add New FAQ'}
+            Add New FAQ
           </h2>
         </div>
         <div className="p-6 space-y-5">
@@ -174,16 +162,8 @@ export default function CourseFAQs() {
               disabled={formLoading}
               className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-60"
             >
-              {formLoading ? (editing !== null ? 'Updating...' : 'Adding...') : (editing !== null ? 'Update FAQ' : 'Add FAQ')}
+              {formLoading ? 'Adding...' : 'Add FAQ'}
             </button>
-            {editing !== null && (
-              <button
-                onClick={() => { setEditing(null); setForm(empty); setError(''); }}
-                className="flex-1 rounded-lg border border-stroke py-3 text-sm font-medium text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 transition"
-              >
-                Cancel
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -204,21 +184,15 @@ export default function CourseFAQs() {
             </h3>
             <div className="space-y-3">
               {items.map(faq => (
-                <div 
-                  key={faq.id} 
+                <div
+                  key={faq.id}
                   className="rounded-xl border border-stroke bg-white p-5 dark:border-strokedark dark:bg-boxdark transition-all duration-200 hover:border-blue-200 dark:hover:border-blue-700"
                 >
                   <p className="font-semibold text-black dark:text-white mb-2">{faq.question}</p>
                   <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">{faq.answer}</p>
                   <div className="flex gap-4 mt-4 pt-2 border-t border-stroke dark:border-strokedark">
-                    <button 
-                      onClick={() => handleEdit(faq)} 
-                      className="text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline transition"
-                    >
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(faq.id)} 
+                    <button
+                      onClick={() => handleDelete(faq.id)}
                       className="text-red-500 dark:text-red-400 text-sm font-medium hover:underline transition"
                     >
                       Delete

@@ -78,7 +78,7 @@ export default function CourseFeedbackForm({
   };
 
   return (
-    <div className="rounded-xl border border-stroke bg-white dark:bg-boxdark dark:border-strokedark p-5 max-w-lg mx-auto">
+    <div className="rounded-xl border border-stroke bg-white dark:bg-boxdark dark:border-strokedark p-5">
 
 <h2 className="text-base font-semibold text-black dark:text-white mb-4">
   Course Feedback

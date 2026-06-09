@@ -229,112 +229,58 @@ function CourseCard({
         )}
 
         {/* ACTIONS */}
-        <div className="mt-4 flex items-center justify-between pt-3 border-t border-stroke dark:border-strokedark gap-2">
-          <span className="text-xs text-gray-400">
-            {new Date(course.created_at).toLocaleDateString()}
-          </span>
+        <div className="mt-4 pt-3 border-t border-stroke dark:border-strokedark flex flex-col gap-2">
+
+          {(!(!isAdmin && !isProfessor && !isEnrolled)) && (
+            <span className="text-xs text-gray-400">
+              {new Date(course.created_at).toLocaleDateString()}
+            </span>
+          )}
 
           {/* ADMIN */}
           {isAdmin && (
-            <div className="flex gap-2 flex-wrap justify-end">
-              <button
-                type="button"
-                onClick={() => navigate(`/courses/${course.id}`)}
-                className="text-sm font-medium text-primary"
-              >
-                View Course
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
-                className="text-sm font-medium text-indigo-600"
-              >
-                Assignments
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate(`/courses/${course.id}/announcements`)}
-                className="text-sm font-medium text-orange-500"
-              >
-                Announcements
-              </button>
+            <div className="flex items-center gap-4">
+              <button type="button" onClick={() => navigate(`/courses/${course.id}`)} className="text-sm font-medium text-primary hover:underline transition">View Course</button>
+              <button type="button" onClick={() => navigate(`/courses/${course.id}?tab=assignments`)} className="text-sm font-medium text-indigo-600 hover:underline transition">Assignments</button>
+              <button type="button" onClick={() => navigate(`/courses/${course.id}/announcements`)} className="text-sm font-medium text-orange-500 hover:underline transition">Announcements</button>
             </div>
           )}
 
-          {/* PROFESSOR */}
+          {/* ASSIGNED PROFESSOR */}
           {isAssignedProfessor && (
-            <div className="flex gap-2 flex-wrap justify-end">
-              <button
-                onClick={() => navigate(`/courses/${course.id}`)}
-                className="text-sm font-medium text-violet-600"
-              >
-                My Course
-              </button>
-
-              <button
-                onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
-                className="text-sm font-medium text-indigo-600"
-              >
-                Assignments
-              </button>
-
-              <button
-                onClick={() => navigate(`/courses/${course.id}/announcements`)}
-                className="text-sm font-medium text-orange-500"
-              >
-                Announcements
-              </button>
+            <div className="flex items-center gap-4">
+              <button onClick={() => navigate(`/courses/${course.id}`)} className="text-sm font-medium text-violet-600 hover:underline transition">My Course</button>
+              <button onClick={() => navigate(`/courses/${course.id}?tab=assignments`)} className="text-sm font-medium text-indigo-600 hover:underline transition">Assignments</button>
+              <button onClick={() => navigate(`/courses/${course.id}/announcements`)} className="text-sm font-medium text-orange-500 hover:underline transition">Announcements</button>
             </div>
           )}
 
-         {isProfessor && !isAssignedProfessor && (
-          <div className="flex gap-2 flex-wrap justify-end">
-            <button
-              onClick={() => navigate(`/courses/${course.id}/announcements`)}
-              className="text-sm font-medium text-orange-500"
-            >
-                Announcements
-            </button>
-          </div>
-        )}
+
 
           {/* STUDENT */}
           {!isAdmin && !isProfessor && (
             isEnrolled ? (
-              <div className="flex gap-2 flex-wrap justify-end">
-                <button
-                  onClick={() => navigate(`/courses/${course.id}`)}
-                  className="text-sm font-medium text-emerald-600"
-                >
-                  Go to Course
-                </button>
-
-                <button
-                  onClick={() => navigate(`/courses/${course.id}?tab=assignments`)}
-                  className="text-sm font-medium text-indigo-600"
-                >
-                  Assignments
-                </button>
-
-                <button
-                  onClick={() => navigate(`/courses/${course.id}/announcements`)}
-                  className="text-sm font-medium text-orange-500"
-                >
-                  Announcements
-                </button>
+              <div className="flex items-center gap-4">
+                <button onClick={() => navigate(`/courses/${course.id}`)} className="text-sm font-medium text-emerald-600 hover:underline transition">Go to Course</button>
+                <button onClick={() => navigate(`/courses/${course.id}?tab=assignments`)} className="text-sm font-medium text-indigo-600 hover:underline transition">Assignments</button>
+                <button onClick={() => navigate(`/courses/${course.id}/announcements`)} className="text-sm font-medium text-orange-500 hover:underline transition">Announcements</button>
               </div>
             ) : (
-              <button
-                disabled={enrolling}
-                onClick={handleEnrollClick}
-                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white"
-              >
-                {enrolling ? 'Enrolling...' : 'Enroll'}
-              </button>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400">
+                  {new Date(course.created_at).toLocaleDateString()}
+                </span>
+                <button
+                  disabled={enrolling}
+                  onClick={handleEnrollClick}
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {enrolling ? 'Enrolling...' : 'Enroll'}
+                </button>
+              </div>
             )
           )}
+
         </div>
       </div>
     </div>
