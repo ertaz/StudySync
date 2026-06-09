@@ -1,6 +1,7 @@
-const express = require("express");
-const router = express.Router();
-const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const express = require('express');
+const router  = express.Router();
+const contactController = require('../controllers/contactController');
+const { authenticate, authorize } = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -39,9 +40,25 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
  *       201:
  *         description: Mesazhi u dërgua me sukses
  */
-router.post("/", (req, res) => {
-  res.json({ ok: true });
-});
+
+// Logged in users only
+router.post('/', authenticate, contactController.sendMessage);
+
+/**
+ * @swagger
+ * /api/contact:
+ *   get:
+ *     summary: Merr të gjitha mesazhet (Admin)
+ *     tags: [Contact]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista e mesazheve u mor me sukses
+ */
+
+// Admin only
+router.get('/',           authenticate, authorize('admin'), contactController.getAllMessages);
 
 /**
  * @swagger
@@ -61,8 +78,6 @@ router.post("/", (req, res) => {
  *       200:
  *         description: Përditësuar me sukses
  */
-router.patch("/:id/read", authenticate, authorize("admin"), (req, res) => {
-  res.json({ ok: true });
-});
+router.patch('/:id/read', authenticate, authorize('admin'), contactController.markAsRead);
 
 module.exports = router;

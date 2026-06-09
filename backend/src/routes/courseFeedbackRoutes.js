@@ -1,6 +1,12 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { authenticate, authorize } = require("../middlewares/authMiddleware");
+
+const controller = require('../controllers/courseFeedbackController');
+
+const {
+  authenticate,
+  authorize,
+} = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -40,9 +46,31 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
  *       201:
  *         description: Feedback u shtua me sukses
  */
-router.post("/", authenticate, (req, res) => {
-  res.json({ ok: true });
-});
+router.post(
+  '/',
+  authenticate,
+  authorize('student'),
+  controller.create
+);
+
+/**
+ * @swagger
+ * /api/course-feedback:
+ *   get:
+ *     summary: Merr të gjitha feedback-et (Admin)
+ *     tags: [Course Feedback]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sukses
+ */
+router.get(
+  '/',
+  authenticate,
+  authorize('admin'),
+  controller.getAll
+);
 
 /**
  * @swagger
@@ -60,9 +88,12 @@ router.post("/", authenticate, (req, res) => {
  *       200:
  *         description: Sukses
  */
-router.get("/course/:courseId", (req, res) => {
-  res.json([]);
-});
+router.get(
+    '/course/:courseId',
+    authenticate,
+    authorize('admin'),
+    controller.getByCourse
+  );
 
 /**
  * @swagger
@@ -83,12 +114,10 @@ router.get("/course/:courseId", (req, res) => {
  *         description: Sukses
  */
 router.patch(
-  "/:id/reviewed",
+  '/:id/reviewed',
   authenticate,
-  authorize("admin"),
-  (req, res) => {
-    res.json({ ok: true });
-  }
+  authorize('admin'),
+  controller.markReviewed
 );
 
 /**
@@ -109,8 +138,11 @@ router.patch(
  *       200:
  *         description: Sukses
  */
-router.delete("/:id", authenticate, (req, res) => {
-  res.json({ ok: true });
-});
+router.delete(
+  '/:id',
+  authenticate,
+  authorize('admin'),
+  controller.remove
+);
 
 module.exports = router;

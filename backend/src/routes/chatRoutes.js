@@ -1,9 +1,7 @@
-const express = require("express");
-const router = express.Router();
-// Shto controller-in tënd nëse e ke, p.sh:
-// const controller = require("../controllers/chatController");
-
-const { authenticate } = require("../middlewares/authMiddleware");
+const express    = require('express');
+const router     = express.Router();
+const controller = require('../controllers/chatController');
+const { authenticate } = require('../middlewares/authMiddleware');
 
 /**
  * @swagger
@@ -31,8 +29,8 @@ const { authenticate } = require("../middlewares/authMiddleware");
  *       200:
  *         description: Historiku u mor me sukses
  */
-router.get("/:courseId/history", authenticate, (req, res) => {
-  res.json({ msg: "Chat history placeholder" });
-});
+
+// GET /api/chat/:courseId/history
+router.get('/:courseId/history', authenticate, controller.getHistory);
 
 module.exports = router;

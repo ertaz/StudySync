@@ -1,6 +1,15 @@
-const express = require("express");
+const express = require('express');
+
 const router = express.Router();
-const { authenticate } = require("../middlewares/authMiddleware");
+
+const {
+  authenticate,
+  authorize
+} = require('../middlewares/authMiddleware');
+
+const upload = require('../middlewares/noteUploadMiddleware');
+
+const controller = require('../controllers/courseNoteController');
 
 /**
  * @swagger
@@ -8,6 +17,30 @@ const { authenticate } = require("../middlewares/authMiddleware");
  *   - name: Course Notes
  *     description: API për shënimet personale të studentëve në kurse
  */
+
+/**
+ * @swagger
+ * /api/course-notes/course/{courseId}:
+ *   get:
+ *     summary: Merr shënimet për një kurs specifik
+ *     tags: [Course Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sukses
+ */
+router.get(
+  '/course/:courseId',
+  authenticate,
+  controller.getNotes
+);
 
 /**
  * @swagger
@@ -37,31 +70,13 @@ const { authenticate } = require("../middlewares/authMiddleware");
  *       201:
  *         description: Shënimi u krijua
  */
-router.post("/", authenticate, (req, res) => {
-  res.json({ ok: true });
-});
-
-/**
- * @swagger
- * /api/course-notes/course/{courseId}:
- *   get:
- *     summary: Merr shënimet për një kurs specifik
- *     tags: [Course Notes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: courseId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Sukses
- */
-router.get("/course/:courseId", authenticate, (req, res) => {
-  res.json([]);
-});
+router.post(
+  '/',
+  authenticate,
+  authorize('student'),
+  upload.single('file'),
+  controller.uploadNote
+);
 
 /**
  * @swagger
@@ -81,8 +96,10 @@ router.get("/course/:courseId", authenticate, (req, res) => {
  *       200:
  *         description: Sukses
  */
-router.delete("/:id", authenticate, (req, res) => {
-  res.json({ ok: true });
-});
+router.delete(
+  '/:id',
+  authenticate,
+  controller.deleteNote
+);
 
 module.exports = router;
