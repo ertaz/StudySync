@@ -9,6 +9,8 @@ import SignIn   from "./pages/AuthPages/SignIn";
 import SignUp   from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
 
+import { Toaster } from "react-hot-toast";
+
 // ── Lazy imports (route-based code splitting) ─────────────────
 const Videos        = lazy(() => import("./pages/UiElements/Videos"));
 const Images        = lazy(() => import("./pages/UiElements/Images"));
@@ -82,28 +84,38 @@ const AppRoutes = () => {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
 
-  return (
-    <Suspense fallback={<PageLoader />}>
+
+return (
+  <Suspense fallback={<PageLoader />}>
+    <>
+    <Toaster 
+  position="top-right" 
+  reverseOrder={false} 
+  containerStyle={{
+    zIndex: 999999, // Një numër 9 më shumë se header-i i ekipit që të dalë sipër tij
+  }}
+/>
+
       <Routes>
         {/* Auth */}
-        <Route path="/signin" element={!user ? <SignIn />  : <Navigate to="/" replace />} />
-        <Route path="/signup" element={!user ? <SignUp />  : <Navigate to="/" replace />} />
+        <Route path="/signin" element={!user ? <SignIn /> : <Navigate to="/" replace />} />
+        <Route path="/signup" element={!user ? <SignUp /> : <Navigate to="/" replace />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminRoute><AppLayout /></AdminRoute>}>
-          <Route index                element={<AdminPanel />} />
-          <Route path="professors"    element={<AdminDashboard />} />
-          <Route path="courses"       element={<AdminCoursesPage />} />
-          <Route path="students"      element={<AdminStudentsEnrollmentsPage />} />
-          <Route path="settings"      element={<AdminSettingsPage />} />
-          <Route path="/admin/courses/create"   element={<CreateCoursePage />} />
+          <Route index element={<AdminPanel />} />
+          <Route path="professors" element={<AdminDashboard />} />
+          <Route path="courses" element={<AdminCoursesPage />} />
+          <Route path="students" element={<AdminStudentsEnrollmentsPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="/admin/courses/create" element={<CreateCoursePage />} />
           <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
         </Route>
 
-        <Route path="/courses/:id/announcements"                             element={<AnnouncementsPage />} />
-        <Route path="/courses/:id/announcements/create"                      element={<CreateAnnouncementPage />} />
-        <Route path="/courses/:id/announcements/edit/:announcementId"        element={<EditAnnouncementPage />} />
-        <Route path="/profile"        element={<ProfilePage />} />
+        <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
+        <Route path="/courses/:id/announcements/create" element={<CreateAnnouncementPage />} />
+        <Route path="/courses/:id/announcements/edit/:announcementId" element={<EditAnnouncementPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
 
         <Route
           path="/contact"
@@ -111,50 +123,56 @@ const AppRoutes = () => {
         />
         <Route path="/admin/messages" element={<ContactMessages />} />
 
-        <Route path="/faqs/:courseId"           element={<CourseFAQs />} />
-        <Route path="/faq-accordion/:courseId"  element={<CourseFAQAccordion />} />
+        <Route path="/faqs/:courseId" element={<CourseFAQs />} />
+        <Route path="/faq-accordion/:courseId" element={<CourseFAQAccordion />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route index path="/"              element={<Home />} />
-          <Route path="/courses"             element={<CoursesPage />} />
-          <Route path="/courses/:id"         element={<CourseDetailPage />} />
-          <Route path="/calendar"            element={<Calendar />} />
-          <Route path="/blank"               element={<Blank />} />
-          <Route path="/form-elements"       element={<FormElements />} />
-          <Route path="/basic-tables"        element={<BasicTables />} />
-          <Route path="/alerts"              element={<Alerts />} />
-          <Route path="/avatars"             element={<Avatars />} />
-          <Route path="/badge"               element={<Badges />} />
-          <Route path="/buttons"             element={<Buttons />} />
-          <Route path="/images"              element={<Images />} />
-          <Route path="/videos"              element={<Videos />} />
-          <Route path="/line-chart"          element={<LineChart />} />
-          <Route path="/bar-chart"           element={<BarChart />} />
+          <Route index path="/" element={<Home />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/courses/:id" element={<CourseDetailPage />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/blank" element={<Blank />} />
+          <Route path="/form-elements" element={<FormElements />} />
+          <Route path="/basic-tables" element={<BasicTables />} />
+          <Route path="/alerts" element={<Alerts />} />
+          <Route path="/avatars" element={<Avatars />} />
+          <Route path="/badge" element={<Badges />} />
+          <Route path="/buttons" element={<Buttons />} />
+          <Route path="/images" element={<Images />} />
+          <Route path="/videos" element={<Videos />} />
+          <Route path="/line-chart" element={<LineChart />} />
+          <Route path="/bar-chart" element={<BarChart />} />
           <Route path="/assignments/:assignmentId/submit" element={<SubmissionForm />} />
-          <Route path="/dashboard"           element={<Dashboard />} />
-          <Route path="/assignments"         element={<Assignments />} />
-          <Route path="/assignments/new"     element={<AssignmentForm />} />
-          <Route path="/assignments/:id"     element={<AssignmentDetail />} />
-          <Route path="/assignments/:id/edit"        element={<AssignmentForm />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/assignments" element={<Assignments />} />
+          <Route path="/assignments/new" element={<AssignmentForm />} />
+          <Route path="/assignments/:id" element={<AssignmentDetail />} />
+          <Route path="/assignments/:id/edit" element={<AssignmentForm />} />
           <Route path="/assignments/:id/submissions" element={<AssignmentSubs />} />
-          <Route path="/stats"               element={<Stats />} />
-          <Route path="/data-tools"          element={<DataTools />} />
-          <Route path="/courses/:id/chat"    element={<CourseChatPage />} />
+          <Route path="/stats" element={<Stats />} />
+          <Route path="/data-tools" element={<DataTools />} />
+          <Route path="/courses/:id/chat" element={<CourseChatPage />} />
           <Route path="/admin/course-feedback" element={<CourseFeedbackManagementPage />} />
 
           {/* Mbrojtja nga studenti */}
           <Route
             path="/dynamic-report"
-            element={user?.role === "student" ? <Navigate to="/" replace /> : <DynamicReport />}
+            element={
+              user?.role === "student"
+                ? <Navigate to="/" replace />
+                : <DynamicReport />
+            }
           />
         </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Suspense>
-  );
-};
+    </>
+  </Suspense>
+);
+}
+
 
 export default function App() {
   return (

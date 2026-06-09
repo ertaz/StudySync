@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-
 import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import {
   Assignment,
@@ -49,8 +49,29 @@ export default function AssignmentDetail() {
 
         setAssignment(data);
 
+        // Kontrolli nëse afati i assignment-it ka kaluar
+        if (data && data.deadline) {
+          const deadlineDate = new Date(data.deadline);
+          const currentDate = new Date();
+
+          if (deadlineDate < currentDate) {
+            toast.error("Kujdes! Afati i këtij assignment-i ka kaluar.", {
+              duration: 4000,
+              style: {
+                borderRadius: '8px',
+                background: '#ef4444',
+                color: '#fff',
+              },
+            });
+          }
+        }
+
       } catch (err) {
         console.error(err);
+
+        toast.error(
+          "Failed to load assignment."
+        );
       } finally {
         setLoading(false);
       }
