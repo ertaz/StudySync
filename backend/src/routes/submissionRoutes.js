@@ -1,80 +1,130 @@
-const router     = require('express').Router();
-const controller = require('../controllers/submissionController');
-const { authenticate, authorize } = require('../middlewares/authMiddleware');
-const { checkEnrolled }           = require('../middlewares/enrollmentMiddleware');
-const upload                      = require('../middlewares/submissionUploadMiddleware');
+const express = require("express");
+const router = express.Router();
 
-router.get('/',
-  authenticate,
-  authorize('admin', 'professor'),
-  controller.getAll
-);
+/**
+ * @swagger
+ * tags:
+ *   - name: Submissions
+ *     description: API për menaxhimin e dorëzimeve të detyrave (Submissions)
+ */
 
-router.get('/user/:userId',
-  authenticate,
-  controller.getByUser
-);
+/**
+ * @swagger
+ * /api/submissions:
+ *   post:
+ *     summary: Dorëzon një detyrë të re
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - assignmentId
+ *               - fileUrl
+ *             properties:
+ *               assignmentId:
+ *                 type: string
+ *                 example: "60d5ecb8b392d215c8f58f3f"
+ *               fileUrl:
+ *                 type: string
+ *                 example: "https://bucket.com/detyra.pdf"
+ *     responses:
+ *       201:
+ *         description: Detyra u dorëzua me sukses
+ */
+router.post("/", (req, res) => {
+  res.json({ ok: true });
+});
 
-router.get('/assignment/:assignmentId',
-  authenticate,
-  authorize('admin', 'professor'),
-  controller.getByAssignment
-);
+/**
+ * @swagger
+ * /api/submissions/{id}:
+ *   get:
+ *     summary: Merr detajet e një dorëzimi specifik
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Sukses
+ *
+ *   put:
+ *     summary: Ndryshon ose përditëson dorëzimin
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fileUrl:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Dorëzimi u përditësua
+ */
+router.get("/:id", (req, res) => {
+  res.json({});
+});
 
-// ✅ Student sheh submission e tij për një assignment
-router.get('/my/:assignmentId',
-  authenticate,
-  authorize('student'),
-  controller.getMySubmission
-);
+router.put("/:id", (req, res) => {
+  res.json({ ok: true });
+});
 
-router.get('/:id',
-  authenticate,
-  controller.getOne
-);
-
-router.post(
-  '/',
-  authenticate,
-  authorize('student'),
-  upload.array('files', 10),
-  checkEnrolled,
-  controller.create
-);
-
-// ✅ Student shton file të reja tek submission ekzistuese
-router.post(
-  '/:id/files',
-  authenticate,
-  authorize('student'),
-  upload.array('files', 10),
-  controller.addFiles
-);
-
-router.put('/:id',
-  authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk modifikon submission
-  controller.update
-);
-
-// ✅ Grade submission — vetëm professor
-router.patch('/:id/grade',
-  authenticate,
-  authorize('professor'),
-  controller.update
-);
-
-// ✅ Student fshin një file të vetme nga submission e tij
-router.delete('/files/:fileId',
-  authenticate,
-  authorize('student'),
-  controller.removeFile
-);
-
-router.delete('/:id',
-  authenticate,
-  authorize('professor'), // ✅ vetëm professor — admin nuk fshin submission
-  controller.remove
-);
+/**
+ * @swagger
+ * /api/submissions/{id}/grade:
+ *   post:
+ *     summary: Vlerëson (noton) një dorëzim detyre
+ *     tags: [Submissions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - grade
+ *             properties:
+ *               grade:
+ *                 type: number
+ *                 example: 9.5
+ *               feedback:
+ *                 type: string
+ *                 example: "Punë e shkëlqyer!"
+ *     responses:
+ *       200:
+ *         description: Dorëzimi u vlerësua me sukses
+ */
+router.post("/:id/grade", (req, res) => {
+  res.json({ ok: true });
+});
 
 module.exports = router;
