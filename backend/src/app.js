@@ -29,6 +29,7 @@ const courseNoteRoutes =
   require('./routes/courseNoteRoutes');
   const courseFeedbackRoutes =
  require('./routes/courseFeedbackRoutes');
+ const auditLogRoutes = require('./routes/auditLogRoutes');
 
 
 
@@ -76,6 +77,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/students',               studentRoutes);    // export/import students
 app.use('/api/professors',             professorRoutes);  // export/import + list professors
 app.use('/api/reports',                reportRoutes);     // dynamic report generation
+app.use('/api/audit-logs',            auditLogRoutes);
 
 // 404
 app.use((req, res) => {

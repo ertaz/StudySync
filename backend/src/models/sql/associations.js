@@ -19,6 +19,7 @@ const RolePermission = require('./RolePermission');
 const CourseNote = require('./CourseNote');
 const CourseFeedback =
   require('./CourseFeedback');
+ 
 
 const CourseFaq   = require('./CourseFaq');
 const FaqCategory = require('./FaqCategory');
@@ -345,3 +346,10 @@ FaqCategory.hasMany(CourseFaq, {
   as:         'faqs',
 });
 
+AuditLog.belongsTo(User, {
+  foreignKey: 'user_id',
+});
+
+User.hasMany(AuditLog, {
+  foreignKey: 'user_id',
+});
