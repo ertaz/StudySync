@@ -17,19 +17,15 @@ type NavItem = {
   name: string;
   icon: React.ReactNode;
   path?: string;
+  roles?: string[];
   subItems?: { name: string; path: string; pro?: boolean; new?: boolean }[];
 };
 
 const navItems: NavItem[] = [
   {
-  icon: <PlugInIcon />,
-  name: "Home",
-  path: "/",
-},
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/dashboard",
+    icon: <PlugInIcon />,
+    name: "Home",
+    path: "/",
   },
   {
     icon: <BoxCubeIcon />,
@@ -40,25 +36,22 @@ const navItems: NavItem[] = [
     icon: <ListIcon />,
     name: "Assignments",
     subItems: [
-      { name: "All Assignments",  path: "/assignments" },
-      { name: "Dynamic Report",   path: "/dynamic-report" },
+      { name: "All Assignments", path: "/assignments" },
+      { name: "Dynamic Report", path: "/dynamic-report" },
     ],
   },
- 
   {
     icon: <UserCircleIcon />,
     name: "Profile",
     path: "/profile",
   },
-
   {
-  icon: <EnvelopeIcon />,
-  name: "Contact Us",
-  path: "/contact",
-}
+    icon: <EnvelopeIcon />,
+    name: "Contact Us",
+    path: "/contact",
+    roles: ["student"],
+  },
 ];
-
-
 
 const ShieldIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -70,7 +63,6 @@ const ShieldIcon = () => (
 );
 
 const AppSidebar: React.FC = () => {
-  // ── Zustand store (centralized state management) ──────────
   const { isExpanded, isMobileOpen, isHovered, setSidebarHovered } = useAppSidebar();
   const user = useAppUser();
 
@@ -92,7 +84,7 @@ const AppSidebar: React.FC = () => {
   useEffect(() => {
     if (!openSubmenu) return;
     const key = `${openSubmenu.type}-${openSubmenu.index}`;
-    const el  = subMenuRefs.current[key];
+    const el = subMenuRefs.current[key];
     if (el) {
       setSubMenuHeight(prev => ({ ...prev, [key]: el.scrollHeight }));
     }
@@ -106,90 +98,90 @@ const AppSidebar: React.FC = () => {
 
   const renderItems = (items: NavItem[], type: "main" | "others") => (
     <ul className="flex flex-col gap-4">
-      {items.map((item, index) => (
-        <li key={item.name}>
-          {item.subItems ? (
-            <button
-              onClick={() => handleToggle(index, type)}
-              className={`menu-item ${
-                openSubmenu?.type === type && openSubmenu?.index === index
-                  ? "menu-item-active"
-                  : "menu-item-inactive"
-              }`}
-            >
-              <span className="menu-item-icon-size">{item.icon}</span>
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <span className="menu-item-text">{item.name}</span>
-              )}
-              {(isExpanded || isHovered || isMobileOpen) && (
-                <ChevronDownIcon
-                  className={`ml-auto transition-transform ${
-                    openSubmenu?.type === type && openSubmenu?.index === index
-                      ? "rotate-180"
-                      : ""
-                  }`}
-                />
-              )}
-            </button>
-          ) : (
-            item.path && (
-              <Link
-                to={item.path}
+      {items
+        .filter(item => !item.roles || item.roles.includes(user?.role ?? ""))
+        .map((item, index) => (
+          <li key={item.name}>
+            {item.subItems ? (
+              <button
+                onClick={() => handleToggle(index, type)}
                 className={`menu-item ${
-                  isActive(item.path) ? "menu-item-active" : "menu-item-inactive"
+                  openSubmenu?.type === type && openSubmenu?.index === index
+                    ? "menu-item-active"
+                    : "menu-item-inactive"
                 }`}
               >
                 <span className="menu-item-icon-size">{item.icon}</span>
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <span className="menu-item-text">{item.name}</span>
                 )}
-              </Link>
-            )
-          )}
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <ChevronDownIcon
+                    className={`ml-auto transition-transform ${
+                      openSubmenu?.type === type && openSubmenu?.index === index
+                        ? "rotate-180"
+                        : ""
+                    }`}
+                  />
+                )}
+              </button>
+            ) : (
+              item.path && (
+                <Link
+                  to={item.path}
+                  className={`menu-item ${
+                    isActive(item.path) ? "menu-item-active" : "menu-item-inactive"
+                  }`}
+                >
+                  <span className="menu-item-icon-size">{item.icon}</span>
+                  {(isExpanded || isHovered || isMobileOpen) && (
+                    <span className="menu-item-text">{item.name}</span>
+                  )}
+                </Link>
+              )
+            )}
 
-          {item.subItems && (isExpanded || isHovered || isMobileOpen) && (
-            <div
-              ref={el => { subMenuRefs.current[`${type}-${index}`] = el; }}
-              style={{
-                height:
-                  openSubmenu?.type === type && openSubmenu?.index === index
-                    ? subMenuHeight[`${type}-${index}`]
-                    : 0,
-              }}
-              className="overflow-hidden transition-all duration-300"
-            >
-              <ul className="ml-9 mt-2 space-y-1">
-                {item.subItems.map(sub => {
-                  // Fshih "Dynamic Report" per student dhe admin
-                  if (sub.name === "Dynamic Report" && (user?.role === "student" || user?.role === "admin")) {
-                    return null;
-                  }
+            {item.subItems && (isExpanded || isHovered || isMobileOpen) && (
+              <div
+                ref={el => { subMenuRefs.current[`${type}-${index}`] = el; }}
+                style={{
+                  height:
+                    openSubmenu?.type === type && openSubmenu?.index === index
+                      ? subMenuHeight[`${type}-${index}`]
+                      : 0,
+                }}
+                className="overflow-hidden transition-all duration-300"
+              >
+                <ul className="ml-9 mt-2 space-y-1">
+                  {item.subItems.map(sub => {
+                    if (sub.name === "Dynamic Report" && (user?.role === "student" || user?.role === "admin")) {
+                      return null;
+                    }
 
-                  return (
-                    <li key={sub.name}>
-                      <Link
-                        to={sub.path}
-                        className={`menu-dropdown-item ${
-                          isActive(sub.path)
-                            ? "menu-dropdown-item-active"
-                            : "menu-dropdown-item-inactive"
-                        }`}
-                      >
-                        {sub.name}
-                        {sub.name === "Dynamic Report" && (
-                          <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wide">
-                            
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
-        </li>
-      ))}
+                    return (
+                      <li key={sub.name}>
+                        <Link
+                          to={sub.path}
+                          className={`menu-dropdown-item ${
+                            isActive(sub.path)
+                              ? "menu-dropdown-item-active"
+                              : "menu-dropdown-item-inactive"
+                          }`}
+                        >
+                          {sub.name}
+                          {sub.name === "Dynamic Report" && (
+                            <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary uppercase tracking-wide">
+                            </span>
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </li>
+        ))}
     </ul>
   );
 
@@ -204,24 +196,24 @@ const AppSidebar: React.FC = () => {
       onMouseEnter={() => !isExpanded && setSidebarHovered(true)}
       onMouseLeave={() => setSidebarHovered(false)}
     >
-     {/* LOGO */}
-    <div className="flex items-center justify-center px-5 py-7 h-20">
-      <Link to="/" className="flex items-center justify-center w-full">
-        {isExpanded || isHovered || isMobileOpen ? (
-          <img
-            src="/images/logo/StudySyncLogo.png"
-            alt="StudySync Logo"
-            className="h-10 w-auto object-contain transition-all duration-200"
-          />
-        ) : (
-          <img
-            src="/images/logo/StudySyncLogo.png"
-            alt="StudySync Mini Logo"
-            className="h-8 w-8 object-contain transition-all duration-200"
-          />
-        )}
-      </Link>
-    </div>
+      {/* LOGO */}
+      <div className="flex items-center justify-center px-5 py-7 h-20">
+        <Link to="/" className="flex items-center justify-center w-full">
+          {isExpanded || isHovered || isMobileOpen ? (
+            <img
+              src="/images/logo/StudySyncLogo.png"
+              alt="StudySync Logo"
+              className="h-10 w-auto object-contain transition-all duration-200"
+            />
+          ) : (
+            <img
+              src="/images/logo/StudySyncLogo.png"
+              alt="StudySync Mini Logo"
+              className="h-8 w-8 object-contain transition-all duration-200"
+            />
+          )}
+        </Link>
+      </div>
 
       <div className="overflow-y-auto">
         <nav className="px-5">
@@ -243,7 +235,6 @@ const AppSidebar: React.FC = () => {
               </Link>
             </div>
           )}
-
         </nav>
       </div>
     </aside>
