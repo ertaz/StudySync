@@ -393,6 +393,17 @@ const getEnrollmentYears = async () => {
   return rows.map(r => r.enrollment_year).filter(Boolean);
 };
 
+// ─────────────────────────────────────────────
+// CHECK IF COURSE BELONGS TO PROFESSOR
+// ─────────────────────────────────────────────
+const coursebelongsToProfessor = async (courseId, professorId) => {
+  const course = await Course.findOne({
+    where: { id: courseId, professor_id: professorId },
+    attributes: ['id'],
+  });
+  return !!course;
+};
+
 module.exports = {
   getGlobalSummary,
   getCoursesForReport,
@@ -400,4 +411,5 @@ module.exports = {
   getCoursePieData,
   getProfessorsForFilter,
   getEnrollmentYears,
+  coursebelongsToProfessor,
 };

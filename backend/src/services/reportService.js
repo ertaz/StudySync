@@ -171,10 +171,18 @@ const exportCourseTable = async (courseId, filters, format, res) => {
   throw new Error('Unsupported format');
 };
 
+// ─────────────────────────────────────────────
+// CHECK IF COURSE BELONGS TO PROFESSOR
+// ─────────────────────────────────────────────
+const coursebelongsToProfessor = async (courseId, professorId) => {
+  return repo.coursebelongsToProfessor(courseId, professorId);
+};
+
 module.exports = {
   getFilterOptions,
   getReportData,
   getCourseDetail,
   exportFullReport,
   exportCourseTable,
+  coursebelongsToProfessor,
 };

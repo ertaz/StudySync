@@ -6,6 +6,7 @@ import {
   FilterOptions, ReportSummary, ReportCourse, CourseDetail,
 } from '../../api/reportApi';
 import api from '../../api/axiosInstance';
+import { useAuth } from '../../context/AuthContext';
 
 type Format = 'csv' | 'excel' | 'json';
 
@@ -282,6 +283,9 @@ function CourseBlock({ course }: { course: ReportCourse }) {
 // MAIN PAGE
 // ═══════════════════════════════════════════════════════════════
 export default function DynamicReport() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({ professors: [], years: [] });
   const [summary, setSummary]             = useState<ReportSummary | null>(null);
   const [reportCourses, setReportCourses] = useState<ReportCourse[]>([]);
@@ -298,10 +302,11 @@ export default function DynamicReport() {
   // Populated from reportCourses so it always matches what backend returned
   const [coursesForDropdown, setCoursesForDropdown] = useState<{ id: number; title: string }[]>([]);
 
-  // Load filter options once
+  // Load filter options once — vetëm admin i sheh listën e profesorëve
   useEffect(() => {
+    if (!isAdmin) return;
     fetchFilterOptions().then(setFilterOptions).catch(() => {});
-  }, []);
+  }, [isAdmin]);
 
   // FIX: auto-run report whenever filters change — no button needed
   // Using string state so values are always current synchronously
@@ -364,6 +369,7 @@ export default function DynamicReport() {
         <p className="text-sm font-semibold text-black dark:text-white mb-4">Filtrat e raportit</p>
         <div className="flex flex-wrap gap-3 items-end">
 
+          {isAdmin && (
           <div className="flex flex-col gap-1">
             <span className="text-xs text-gray-400">Profesori</span>
             <select
@@ -377,6 +383,7 @@ export default function DynamicReport() {
               ))}
             </select>
           </div>
+          )}
 
           {/* FIX: courses scoped to current professor — populated from reportCourses */}
           <div className="flex flex-col gap-1">
