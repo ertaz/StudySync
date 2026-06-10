@@ -106,6 +106,28 @@ const panels: PanelCard[] = [
     </svg>
   ),
 },
+{
+  title: 'Audit Logs',
+  description: 'Track all system activities and user actions.',
+  route: '/admin/audit-logs',
+  color: 'from-red-500 to-pink-600',
+  textColor: 'text-red-600 hover:text-red-800',
+  icon: (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 11l3 3L22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+  ),
+},
 ];
 
 export default function AdminPanel() {

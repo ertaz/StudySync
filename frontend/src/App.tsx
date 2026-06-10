@@ -56,6 +56,9 @@ const Stats              = lazy(() => import("./pages/professor/Stats"));
 const DataTools          = lazy(() => import("./pages/professor/DataTools"));
 const SubmissionForm     = lazy(() => import("./pages/student/SubmissionForm"));
 const CourseFeedbackManagementPage = lazy(() => import("./pages/Admin/CourseFeedbackManagementPage"));
+const AdminAuditLogsPage = lazy(
+  () => import('./pages/Admin/AdminAuditLogsPage')
+);
 
 // ── Fallback spinner ──────────────────────────────────────────
 const PageLoader = () => (
@@ -111,6 +114,7 @@ return (
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="/admin/courses/create" element={<CreateCoursePage />} />
           <Route path="/admin/courses/edit/:id" element={<EditCoursePage />} />
+          <Route path="audit-logs" element={<AdminAuditLogsPage />} />
         </Route>
 
         <Route path="/courses/:id/announcements" element={<AnnouncementsPage />} />
