@@ -20,6 +20,7 @@ const profileRoutes = require('./routes/profileRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const faqRoutes = require('./routes/faqRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 const studentRoutes    = require('./routes/studentRoutes');
@@ -72,6 +73,7 @@ app.use('/api/course-feedback',courseFeedbackRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Lab 2 — new routes ────────────────────────────────────────
 app.use('/api/students',               studentRoutes);    // export/import students
