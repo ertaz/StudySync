@@ -1,5 +1,7 @@
 const { Announcement } = require("../models");
 const { createAuditLog } = require("../repositories/authRepository");
+const notificationService = require('../utils/notificationService');
+const enrollmentRepo = require('../repositories/enrollmentRepository');
 
 // GET by course
 const getAnnouncementsByCourse = async (req, res) => {
@@ -38,6 +40,16 @@ const createAnnouncement = async (req, res) => {
       new_value: JSON.stringify({ title, content, course_id }),
       ip_address: req.ip,
     });
+
+    const enrollments = await enrollmentRepo.findByCourse(course_id);
+for (const e of enrollments) {
+  await notificationService.send(
+    e.user_id,
+    'announcement',
+    `New Announcement: ${title}`,
+    content
+  );
+}
 
     res.json({ success: true, data: newAnnouncement });
   } catch (error) {

@@ -9,6 +9,9 @@ const fileRepository = require('../repositories/fileRepository');
 const fs = require('fs');
 const path = require('path');
 
+const notificationService = require('../utils/notificationService');
+const enrollmentRepo = require('../repositories/enrollmentRepository');
+
 // ─────────────────────────────────────────────
 // GET ALL WITH FILES
 // ─────────────────────────────────────────────
@@ -97,6 +100,18 @@ const createAssignmentSecure = async (data, userId, role, files = []) => {
   }
 
   const attachments = await fileRepository.getByEntity('assignment', assignment.id);
+
+  // Notify enrolled students
+  const enrollments = await enrollmentRepo.findByCourse(assignment.course_id);
+  for (const e of enrollments) {
+    await notificationService.send(
+      e.user_id,
+      'assignment',
+      `New Assignment: ${assignment.title}`,
+      assignment.description || 'A new assignment has been posted.'
+    );
+  }
+
   return { ...assignment.toJSON(), attachments };
 };
 

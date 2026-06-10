@@ -20,6 +20,8 @@ module.exports = (io) => {
   io.on('connection', (socket) => {
     console.log(`🔌 Socket connected: ${socket.user.first_name} ${socket.user.last_name} (${socket.user.role})`);
 
+    socket.join(`user_${socket.user.id}`);
+
     // ── JOIN ────────────────────────────────────────────────────
     socket.on('chat:join', async ({ courseId }) => {
       try {

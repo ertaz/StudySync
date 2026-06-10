@@ -31,4 +31,8 @@ const countByCourse = (course_id) =>
 const countByUser = (user_id) =>
   Enrollment.count({ where: { user_id } });
 
-module.exports = { findByUserAndCourse, findAllByUser, create, countByCourse, countByUser };
+
+const findByCourse = (course_id) =>
+  Enrollment.findAll({ where: { course_id } });
+
+module.exports = { findByUserAndCourse, findAllByUser, create, countByCourse, countByUser, findByCourse };

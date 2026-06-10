@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import AppLayout     from "./layout/AppLayout";
+import { NotificationProvider } from "./context/NotificationContext";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import { ZustandSync } from "./store/ZustandSync";
 
@@ -181,12 +182,13 @@ return (
 
 export default function App() {
   return (
-    <Router>
+     <Router>
       <AuthProvider>
-        {/* ZustandSync: sinkronizon AuthContext → Zustand store */}
-        <ZustandSync />
-        <ScrollToTop />
-        <AppRoutes />
+        <NotificationProvider>
+          <ZustandSync />
+          <ScrollToTop />
+          <AppRoutes />
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

@@ -1,5 +1,8 @@
 const { CourseSection, Lesson, File } = require('../models/index');
 
+const notificationService = require('../utils/notificationService');
+const enrollmentRepo = require('../repositories/enrollmentRepository');
+
 // SECTIONS
 const getSections = async (courseId) => {
   return await CourseSection.findAll({
@@ -78,6 +81,20 @@ const createLesson = async ({ section_id, title, description, file, created_by }
   if (fileRecord) {
     fileRecord.entity_id = lesson.id;
     await fileRecord.save();
+  }
+
+  // Notify enrolled students
+  const section = await CourseSection.findByPk(section_id);
+  if (section) {
+    const enrollments = await enrollmentRepo.findByCourse(section.course_id);
+    for (const e of enrollments) {
+      await notificationService.send(
+        e.user_id,
+        'lesson',
+        `New Lesson: ${title}`,
+        description || 'A new lesson has been added.'
+      );
+    }
   }
 
   return lesson;

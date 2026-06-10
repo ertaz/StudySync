@@ -1,6 +1,7 @@
 const enrollmentRepo = require('../repositories/enrollmentRepository');
 const courseRepo     = require('../repositories/courseRepository');
 const settingRepo    = require('../repositories/settingRepository');
+const notificationService = require('../utils/notificationService');
 const { createAuditLog } = require('../repositories/authRepository');
 
 const enrollStudent = async (userId, courseId, ip) => {
@@ -50,6 +51,13 @@ if (allowEnrollment && allowEnrollment.value === 'false') {
     new_value:  JSON.stringify({ course_id: courseId }),
     ip_address: ip,
   });
+ 
+  await notificationService.send(
+  userId,
+  'enrollment',
+  'Enrollment Successful',
+  `You have successfully enrolled in "${course.title}".`
+);
 
   return enrollment;
 };
